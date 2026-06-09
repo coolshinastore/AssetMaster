@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: 'postgres:15-alpine'
+    environment:
+      POSTGRES_DB: assetmaster
+      POSTGRES_PASSWORD: assetmaster
+      POSTGRES_USER: assetmaster
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U assetmaster" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
