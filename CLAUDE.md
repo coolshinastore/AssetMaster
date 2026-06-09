@@ -749,6 +749,8 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 | V4 | `V4__create_wishlist_items_table.sql` | Таблиця `wishlist_items` (UNIQUE user_id+asset_id) |
 | V5 | `V5__create_orders_table.sql` | Таблиця `orders` |
 | V6 | `V6__create_order_items_table.sql` | Таблиця `order_items` |
+| V7 | `V7__add_rejection_reason_to_assets.sql` | Колонка `rejection_reason TEXT` в `assets` |
+| V8 | `V8__create_reviews_table.sql` | Таблиця `reviews` (UNIQUE asset_id+author_id, GIN index) |
 
 ### 15.3 Реалізовані фази
 
@@ -782,6 +784,24 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 - Frontend: `entities/asset/types.ts` + `AuthorAssetDto`; `features/author-assets/authorAssetApi.ts` + `useAuthorAssets.ts`; `AssetsPage` (таблиця активів з Status chip, edit/delete, confirm dialog); `AssetUploadPage` (RHF + Zod, multipart upload, file drag-zone, preview URLs textarea); `AssetEditPage` (pre-filled via reset(), Controller для categoryId select); `Navbar` → user dropdown menu з MUI Menu (роль-залежні пункти: Мої активи для AUTHOR, Адмін панель для ADMIN)
 - Важливо: нові активи мають статус `PENDING`; seed-активи залишаються `PUBLISHED`
 
+**Фаза 6 — Адмін / Модерація ✅**
+- Backend: `AdminService` + `AdminController` (`@PreAuthorize` на рівні класу); ендпоінти: `GET /admin/stats`, `GET /admin/assets/pending`, `PUT /admin/assets/{id}/approve`, `PUT /admin/assets/{id}/reject`, `GET /admin/users`, `PUT /admin/users/{id}/role`
+- Entity: додано поле `rejectionReason TEXT` до `Asset` (V7 міграція) — зберігається при відхиленні, обнуляється при схваленні
+- DTO: `AdminAssetDto`, `AdminUserDto`, `AdminStatsDto`, `RejectAssetRequestDto`, `UpdateUserRoleRequestDto`
+- Frontend: `AdminDashboardPage` (4 stat cards з навігацією), `ModerationPage` (таблиця pending-активів, іконки approve/reject, dialog із TextField для причини), `UsersPage` (таблиця, inline `Select` для ролі з `Chip` renderValue)
+- Frontend: `features/admin-panel/adminApi.ts` + `useAdmin.ts` (6 функцій, queryKeys для інвалідації)
+- Типи `AdminAssetDto`, `AdminUserDto`, `AdminStatsDto` додані до `entities/asset/types.ts`
+
+**Фаза 7 — Відгуки + Аналітика ✅**
+- Backend entity: `Review` (asset_id FK, author_id FK, rating SMALLINT, comment TEXT); UNIQUE (asset_id, author_id)
+- Backend: `ReviewRepository` (`@EntityGraph({"author"})`, `existsByAssetIdAndAuthorId`, `findAverageRatingByAssetId`); `ReviewService` (перевірка покупки через `OrderItemRepository.existsByBuyerIdAndAssetId` перед створенням); `ReviewController` (`GET/POST /api/v1/assets/{assetId}/reviews`)
+- Backend: `AnalyticsService` + `DashboardController` (`GET /dashboard/analytics`, доступ ROLE_AUTHOR або ROLE_ADMIN); нативні SQL-запити через `OrderItemRepository` — `findMonthlySalesByAuthorId` (PostgreSQL `TO_CHAR`, GROUP BY місяць) та `findTopAssetsByAuthorId`
+- DTO: `ReviewDto`, `CreateReviewRequestDto` (`@Min(1)/@Max(5)`), `AnalyticsSummaryDto` з nested records `MonthlySalesDto` і `AssetSalesDto`
+- Frontend `AssetPage`: вкладка "Відгуки (N)" з реальним лічильником; star picker (1–5), форма (лише авторизованим), список відгуків з аватарами та зірками, пагінація; помилки API (403, 409) відображаються через `Alert`
+- Frontend: `AnalyticsPage` — cards (дохід/продажі), `Recharts AreaChart` з градієнтом по місяцях, таблиця топ-10 активів
+- features: `reviews/reviewApi.ts`, `reviews/useReviews.ts`, `analytics/analyticsApi.ts`, `analytics/useAnalytics.ts`
+- Типи `ReviewDto`, `AnalyticsSummaryDto` додані до `entities/asset/types.ts`
+
 ### 15.4 Критичні технічні рішення
 
 **MUI v9 breaking changes** (викликали помилки компіляції у Фазі 2):
@@ -809,26 +829,54 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 
 **CORS**: `application.yml` дозволяє `localhost:5173` І `localhost:5174` (Vite може зайняти будь-який порт)
 
+**`GlobalExceptionHandler` — виправлення (між Фазами 5 і 6)**:
+- `handleValidation` тепер обробляє і `getGlobalErrors()` (class-level constraints), не лише `getFieldErrors()`; merge через `putIfAbsent` на `LinkedHashMap` замість `Collectors.toMap`
+- `handleGeneral` логує виключення через SLF4J (`log.error("Unhandled exception", ex)`) — без цього 500-помилки були «тихими»
+- `handleAuth(AuthenticationException)` — ловить лише виключення з контролерів; помилки з JWT-фільтра потребують `AuthenticationEntryPoint` у `SecurityConfig` (не реалізовано, відкладено)
+
+**Адмін — `@PreAuthorize` на рівні класу**:
+- `AdminController` має `@PreAuthorize("hasRole('ROLE_ADMIN')")` на класі → всі методи захищені автоматично, не треба повторювати на кожному
+
+**Аналітика — нативні SQL-запити**:
+- `OrderItemRepository.findMonthlySalesByAuthorId` і `findTopAssetsByAuthorId` — native `@Query` (не JPQL) через PostgreSQL-специфічні функції (`TO_CHAR`)
+- `AnalyticsService` маппить `Object[]` вручну через `((Number) row[N]).longValue()` і `new BigDecimal(row[N].toString())` — важливо для сумісності з різними PostgreSQL-драйверами (повертають `BigInteger` або `Long` залежно від типу)
+
+**MUI v9 — іконки**:
+- `@mui/icons-material/PersonOutline` не існує як файл у v9 — використовувати `PersonOutlined` (є відповідний `.js` файл); помилка виникає лише в Vite dev-режимі при прямому імпорті
+
+**Відгуки — бізнес-правила**:
+- UNIQUE (asset_id, author_id) на рівні БД + перевірка `existsByAssetIdAndAuthorId` в сервісі (409 Conflict)
+- `OrderItemRepository.existsByBuyerIdAndAssetId` вже існував з Фази 4 — переиспользано без змін
+- Відгук без покупки → 403 Forbidden (повідомлення видно у `Alert` на фронтенді)
+
 ### 15.5 Відомі обмеження (demo-режим)
 
 - Платіжний шлюз: відсутній — замовлення підтверджуються миттєво
 - Download URL: seed-активи не мають `fileKey` → повертається `previewUrls[0]`; реальні файли в MinIO потребують окремого upload
 - Email: відновлення пароля, підтвердження реєстрації — не реалізовано (stub сторінки)
 - 2FA: в роутері є `/auth/reset-password` але логіка не реалізована
+- Відгуки: середній рейтинг активу обчислюється на льоту через `AVG` запит, не кешується — для масштабу треба денормалізувати у `assets.avg_rating`
+- Аналітика: рейтинг у trust bar на `AssetPage` захардкоджений (4.9) — не підключений до реального `AVG(reviews.rating)` по активу
+- `AuthenticationEntryPoint` не налаштований → 401 від JWT-фільтра повертає дефолтну Spring Security відповідь (не ProblemDetail формат)
 
 ### 15.6 Наступні фази
 
-**Фаза 6 — Адмін / Модерація** (наступна):
-- Backend: GET `/admin/assets/pending`, PUT `approve`/`reject`, GET/PUT `/admin/users`
-- Frontend: `AdminDashboardPage`, `AdminModerationPage` (черга), `AdminUsersPage`
-- admin акаунт вже є: `admin@assetmaster.com`/`Admin@1234` (ROLE_ADMIN, додано в Фазі 5)
+**Фаза 8 — Тестування + Polish** (наступна):
 
-**Фаза 7 — Відгуки + Аналітика**:
-- Backend: таблиця `reviews` (V7 migration), endpoints + `DashboardAnalyticsService`
-- Frontend: вкладка "Відгуки" на `AssetPage`, `DashboardAnalyticsPage` з Recharts
+Backend тести:
+- `ReviewServiceTest` — мокати `OrderItemRepository.existsByBuyerIdAndAssetId` + перевіряти 403/409
+- `AdminServiceTest` — перевіряти `requirePending()` кидає 409 якщо статус не PENDING
+- `AssetControllerTest` (MockMvc) — публічні ендпоінти без токена, захищені з токеном
+- `AuthServiceTest` — реєстрація дублю email → 409
+- Integration test (TestContainers) — повний flow: register → login → create asset → approve → review
 
-**Фаза 8 — Тестування + Polish**:
-- JUnit 5 + Mockito для сервісів
-- TestContainers для integration тестів
-- Vitest + RTL для компонентів
-- Playwright E2E для 5 acceptance criteria (розділ 11)
+Frontend тести:
+- `AssetCard.test.tsx` — hover стани, wishlist toggle
+- `LoginPage.test.tsx` — валідація форми, успішний submit
+- Playwright E2E — 5 acceptance criteria з розділу 11
+
+Polish (відомі борги):
+- Підключити реальний `avg_rating` на `AssetPage` (зараз 4.9 захардкоджено) — додати поле або обчислювати через API
+- `AuthenticationEntryPoint` у `SecurityConfig` — повертати ProblemDetail для 401 з фільтрів
+- Верифікований автор badge (`is_verified`) — логіка верифікації не реалізована, поле є в БД
+- `AssetPage` рейтинг у trust bar: додати `GET /assets/{id}/reviews/stats` → `{ avgRating, count }`

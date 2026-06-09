@@ -58,16 +58,16 @@ public class DataInitializer implements ApplicationRunner {
 
     private void seedDemoData() {
         userRepository.save(User.builder()
-                .email("admin@assetmaster.com")
-                .passwordHash(passwordEncoder.encode("Admin@1234"))
+                .email("admin@gmail.com")
+                .passwordHash(passwordEncoder.encode("admin123"))
                 .displayName("AssetMaster Admin")
                 .role(Role.ROLE_ADMIN)
                 .verified(true)
                 .build());
 
         User author = userRepository.save(User.builder()
-                .email("demo@assetmaster.com")
-                .passwordHash(passwordEncoder.encode("Demo@1234"))
+                .email("author@gmail.com")
+                .passwordHash(passwordEncoder.encode("author123"))
                 .displayName("Demo Studio")
                 .role(Role.ROLE_AUTHOR)
                 .verified(true)

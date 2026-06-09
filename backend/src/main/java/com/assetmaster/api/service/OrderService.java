@@ -34,10 +34,9 @@ public class OrderService {
         List<Asset> assets = request.items().stream()
                 .map(item -> {
                     Asset asset = assetRepository.findById(item.assetId())
-                            .orElseThrow(() -> new ApiException(
-                                    "Актив не знайдено: " + item.assetId(), HttpStatus.NOT_FOUND));
+                            .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Актив не знайдено: " + item.assetId()));
                     if (asset.getStatus() != AssetStatus.PUBLISHED) {
-                        throw new ApiException("Актив недоступний для покупки: " + asset.getId(), HttpStatus.BAD_REQUEST);
+                        throw new ApiException(HttpStatus.BAD_REQUEST, "Актив недоступний для покупки: " + asset.getId());
                     }
                     return asset;
                 })
@@ -84,20 +83,20 @@ public class OrderService {
     @Transactional(readOnly = true)
     public OrderDetailDto getOrderById(Long userId, Long orderId) {
         Order order = orderRepository.findByIdAndBuyerId(orderId, userId)
-                .orElseThrow(() -> new ApiException("Замовлення не знайдено", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Замовлення не знайдено"));
         return OrderDetailDto.fromEntity(order);
     }
 
     @Transactional(readOnly = true)
     public DownloadUrlDto getDownloadUrl(Long userId, Long orderId, Long assetId) {
         Order order = orderRepository.findByIdAndBuyerId(orderId, userId)
-                .orElseThrow(() -> new ApiException("Замовлення не знайдено", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Замовлення не знайдено"));
 
         OrderItem item = order.getItems().stream()
                 .filter(i -> i.getAsset().getId().equals(assetId))
                 .findFirst()
                 .orElseThrow(() -> new ApiException(
-                        "Актив не є частиною цього замовлення", HttpStatus.FORBIDDEN));
+                        HttpStatus.FORBIDDEN, "Актив не є частиною цього замовлення"));
 
         Asset asset = item.getAsset();
         Instant expiresAt = Instant.now().plus(15, ChronoUnit.MINUTES);

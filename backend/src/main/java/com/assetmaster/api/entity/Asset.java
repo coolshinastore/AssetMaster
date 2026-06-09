@@ -63,6 +63,9 @@ public class Asset {
     @Builder.Default
     private String[] tags = new String[0];
 
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
     @Column(name = "downloads_count", nullable = false)
     @Builder.Default
     private int downloadsCount = 0;

@@ -12,13 +12,19 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Stack from '@mui/material/Stack'
 import Skeleton from '@mui/material/Skeleton'
 import IconButton from '@mui/material/IconButton'
+import TextField from '@mui/material/TextField'
+import Alert from '@mui/material/Alert'
+import Divider from '@mui/material/Divider'
 import StarIcon from '@mui/icons-material/Star'
+import StarBorderIcon from '@mui/icons-material/StarBorder'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import Navbar from '../../widgets/Navbar/Navbar'
 import Footer from '../../widgets/Footer/Footer'
 import { useAssetDetail } from '../../entities/asset/api/useAssets'
 import { useCart } from '../../features/cart/CartContext'
+import { useAuth } from '../../features/auth/AuthContext'
+import { useReviews, useCreateReview } from '../../features/reviews/useReviews'
 
 export default function AssetPage() {
   const { id } = useParams<{ id: string }>()
@@ -28,6 +34,13 @@ export default function AssetPage() {
   const [license, setLicense] = useState<'STANDARD' | 'COMMERCIAL'>('STANDARD')
   const { addItem, isInCart } = useCart()
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
+  const [reviewPage, setReviewPage] = useState(0)
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const { data: reviews } = useReviews(Number(id), reviewPage)
+  const createReview = useCreateReview(Number(id))
 
   const handleAddToCart = () => {
     if (!asset) return
@@ -160,7 +173,7 @@ export default function AssetPage() {
               >
                 <Tab label="Опис" />
                 <Tab label="Характеристики" />
-                <Tab label="Відгуки (0)" />
+                <Tab label={`Відгуки (${reviews?.totalElements ?? 0})`} />
               </Tabs>
 
               {tab === 0 && (
@@ -201,7 +214,112 @@ export default function AssetPage() {
 
               {tab === 2 && (
                 <Box sx={{ py: 3 }}>
-                  <Typography color="text.secondary">Відгуки з'являться в наступній версії.</Typography>
+                  {/* Write review form */}
+                  {isAuthenticated ? (
+                    <Box sx={{ mb: 4, p: 3, border: '1px solid #e5e8f0', borderRadius: 3 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>
+                        Залишити відгук
+                      </Typography>
+                      {/* Star picker */}
+                      <Box sx={{ display: 'flex', gap: 0.5, mb: 2 }}>
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <IconButton key={star} size="small" onClick={() => setReviewRating(star)}>
+                            {star <= reviewRating
+                              ? <StarIcon sx={{ color: 'warning.main' }} />
+                              : <StarBorderIcon sx={{ color: 'warning.main' }} />}
+                          </IconButton>
+                        ))}
+                      </Box>
+                      <TextField
+                        fullWidth multiline rows={3}
+                        placeholder="Ваш відгук (необов'язково)..."
+                        value={reviewComment}
+                        onChange={e => setReviewComment(e.target.value)}
+                        sx={{ mb: 2 }}
+                      />
+                      {reviewError && (
+                        <Alert severity="error" sx={{ mb: 2 }}>{reviewError}</Alert>
+                      )}
+                      <Button
+                        variant="contained"
+                        disabled={reviewRating === 0 || createReview.isPending}
+                        onClick={() => {
+                          setReviewError(null)
+                          createReview.mutate(
+                            { rating: reviewRating, comment: reviewComment },
+                            {
+                              onSuccess: () => { setReviewRating(0); setReviewComment('') },
+                              onError: (err: unknown) => {
+                                const msg = (err as { response?: { data?: { detail?: string } } })
+                                  ?.response?.data?.detail
+                                setReviewError(msg ?? 'Не вдалося залишити відгук')
+                              },
+                            },
+                          )
+                        }}
+                      >
+                        Опублікувати відгук
+                      </Button>
+                    </Box>
+                  ) : (
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                      Увійдіть та придбайте актив, щоб залишити відгук
+                    </Alert>
+                  )}
+
+                  {/* Reviews list */}
+                  {reviews?.content.length === 0 && (
+                    <Typography color="text.secondary">Відгуків ще немає. Будьте першим!</Typography>
+                  )}
+                  <Stack spacing={3} divider={<Divider />}>
+                    {reviews?.content.map(review => (
+                      <Box key={review.id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                          <Avatar src={review.authorAvatarUrl ?? undefined} sx={{ width: 32, height: 32 }}>
+                            {review.authorName?.[0]}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {review.authorName ?? 'Користувач'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {new Date(review.createdAt).toLocaleDateString('uk-UA')}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ ml: 'auto', display: 'flex' }}>
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <StarIcon
+                                key={s}
+                                sx={{ fontSize: 16, color: s <= review.rating ? 'warning.main' : '#e5e8f0' }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                        {review.comment && (
+                          <Typography variant="body2" sx={{ ml: 6, color: 'text.secondary' }}>
+                            {review.comment}
+                          </Typography>
+                        )}
+                      </Box>
+                    ))}
+                  </Stack>
+
+                  {reviews && reviews.totalPages > 1 && (
+                    <Box sx={{ display: 'flex', gap: 1, mt: 3, justifyContent: 'center' }}>
+                      <Button
+                        size="small" disabled={reviewPage === 0}
+                        onClick={() => setReviewPage(p => p - 1)}
+                      >
+                        Попередня
+                      </Button>
+                      <Button
+                        size="small" disabled={reviews.last}
+                        onClick={() => setReviewPage(p => p + 1)}
+                      >
+                        Наступна
+                      </Button>
+                    </Box>
+                  )}
                 </Box>
               )}
             </Box>

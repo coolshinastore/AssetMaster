@@ -75,7 +75,7 @@ public class StorageService {
             return key;
         } catch (Exception e) {
             log.error("Failed to upload file: {}", file.getOriginalFilename(), e);
-            throw new ApiException("Не вдалося завантажити файл", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Не вдалося завантажити файл");
         }
     }
 
@@ -98,7 +98,7 @@ public class StorageService {
             );
         } catch (Exception e) {
             log.error("Failed to generate presigned URL for key: {}", fileKey, e);
-            throw new ApiException("Не вдалося отримати посилання для завантаження", HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Не вдалося отримати посилання для завантаження");
         }
     }
 }

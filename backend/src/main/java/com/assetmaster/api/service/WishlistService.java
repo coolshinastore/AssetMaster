@@ -36,7 +36,7 @@ public class WishlistService {
             return;
         }
         if (!assetRepository.existsById(assetId)) {
-            throw new ApiException("Актив не знайдено", HttpStatus.NOT_FOUND);
+            throw new ApiException(HttpStatus.NOT_FOUND, "Актив не знайдено");
         }
         User userRef  = userRepository.getReferenceById(userId);
         Asset assetRef = assetRepository.getReferenceById(assetId);

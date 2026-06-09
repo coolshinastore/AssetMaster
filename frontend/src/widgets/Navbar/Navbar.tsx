@@ -18,7 +18,7 @@ import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined'
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline'
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
 import { useAuth } from '../../features/auth/AuthContext'
 import { useCart } from '../../features/cart/CartContext'
@@ -164,7 +164,7 @@ export default function Navbar() {
                 )}
 
                 <MenuItem onClick={() => handleNavigate('/dashboard/profile')}>
-                  <ListItemIcon><PersonOutlineIcon fontSize="small" /></ListItemIcon>
+                  <ListItemIcon><PersonOutlinedIcon fontSize="small" /></ListItemIcon>
                   Профіль
                 </MenuItem>
 

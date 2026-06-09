@@ -67,6 +67,55 @@ export interface AuthorAssetDto {
   createdAt: string
 }
 
+export interface AdminAssetDto {
+  id: number
+  title: string
+  description: string | null
+  authorId: number
+  authorEmail: string
+  authorName: string | null
+  categoryName: string | null
+  price: number
+  status: 'DRAFT' | 'PENDING' | 'PUBLISHED' | 'REJECTED'
+  rejectionReason: string | null
+  previewUrls: string[]
+  tags: string[] | null
+  createdAt: string
+}
+
+export interface AdminUserDto {
+  id: number
+  email: string
+  displayName: string | null
+  role: 'ROLE_USER' | 'ROLE_AUTHOR' | 'ROLE_ADMIN'
+  verified: boolean
+  createdAt: string
+}
+
+export interface AdminStatsDto {
+  totalUsers: number
+  totalAssets: number
+  pendingAssets: number
+  publishedAssets: number
+}
+
+export interface ReviewDto {
+  id: number
+  authorId: number
+  authorName: string | null
+  authorAvatarUrl: string | null
+  rating: number
+  comment: string | null
+  createdAt: string
+}
+
+export interface AnalyticsSummaryDto {
+  totalEarnings: number
+  totalSales: number
+  monthlySales: { month: string; salesCount: number; earnings: number }[]
+  topAssets: { id: number; title: string; salesCount: number; earnings: number }[]
+}
+
 export interface AssetFilters {
   category?: number
   minPrice?: number

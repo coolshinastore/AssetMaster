@@ -31,4 +31,6 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
     java.util.List<Asset> findByAuthorIdOrderByCreatedAtDesc(Long authorId);
 
     long countByCategoryIdAndStatus(Long categoryId, AssetStatus status);
+
+    long countByStatus(AssetStatus status);
 }
