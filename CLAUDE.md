@@ -289,7 +289,8 @@ src/
 │   ├── Navbar/              — глобальний navbar (sticky, search, cart)
 │   ├── Footer/
 │   ├── AssetGrid/           — сітка карток з infinite scroll
-│   └── Sidebar/             — фільтри каталогу
+│   ├── Sidebar/             — фільтри каталогу
+│   └── DashboardLayout/     — layout для всіх /dashboard та /admin сторінок (Navbar + sticky sidebar + Outlet)
 │
 ├── features/
 │   ├── auth/                — login, register, JWT refresh logic
@@ -896,54 +897,63 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 
 ### 15.5 Відомі обмеження (demo-режим)
 
-- Платіжний шлюз: відсутній — замовлення підтверджуються миттєво
-- Download URL: seed-активи не мають `fileKey` → повертається `previewUrls[0]`; реальні файли в MinIO потребують окремого upload
-- Email: відправляється через Gmail SMTP (`MAIL_USERNAME` + `MAIL_PASSWORD` App Password у `.env`); якщо SMTP не налаштований — warn у лог з fallback текстом посилання
-- Відгуки: середній рейтинг активу обчислюється на льоту через `AVG` запит, не кешується — для масштабу треба денормалізувати у `assets.avg_rating`
+- **Платіжний шлюз**: відсутній — замовлення підтверджуються миттєво зі статусом `PAID`
+- **Download URL**: seed-активи не мають `fileKey` → повертається `previewUrls[0]`; реальні файли в MinIO потребують окремого upload
+- **Email SMTP**: налаштовується через `MAIL_USERNAME` + `MAIL_PASSWORD` (Gmail App Password) у `.env`; якщо не заповнено — warn у лог з повним посиланням замість відправки
+- **avg_rating**: обчислюється на льоту через `AVG` SQL-запит, не кешується — для масштабу варто денормалізувати у `assets.avg_rating`
 
 ### 15.6 Відкриті борги
 
-Dashboard Layout — реалізовано ✅
-- `widgets/DashboardLayout/DashboardLayout.tsx` — Navbar + sticky sidebar (240px, desktop only) + `<Outlet />`
-- Sidebar: секція "Загальне" (всі ролі: Профіль, Покупки, Вішліст, Безпека), "Автор" (ROLE_AUTHOR), "Адміністрування" (ROLE_ADMIN)
-- `NavLink` з `&.active` MUI sx — підсвічування активного пункту без додаткового state
-- `router.tsx`: три layout-групи вкладені як `ProtectedRoute → DashboardLayout → page`
-- Checkout (`/checkout`, `/checkout/success`) навмисно поза DashboardLayout — власний Navbar
-- Видалено `<Navbar />` + `<Footer />` + outer Box з 5 сторінок: PurchasesPage, WishlistPage, AssetsPage, AssetUploadPage, AssetEditPage
+Сторінки зі sitemap, які ще не реалізовані:
 
-**Реалізовано після Фази 8:**
+| Маршрут | Опис |
+|---------|------|
+| `/dashboard/notifications` | Список сповіщень |
+| `/dashboard/payments` | Платіжні реквізити |
+| `/admin/categories` | Управління деревом категорій (CRUD) |
+| `/admin/finance` | Транзакції та виплати авторам |
+| `/admin/analytics` | Звіти, трафік |
+| `/500`, `/maintenance` | Системні сторінки |
+| `/about`, `/faq`, `/licenses`, `/contact`, `/blog` | Контентні сторінки |
 
-`AuthenticationEntryPoint` + `AccessDeniedHandler` у `SecurityConfig` ✅
-- `SecurityConfig` отримав `ObjectMapper` через `@RequiredArgsConstructor`; методи `handleUnauthorized` / `handleForbidden` пишуть JSON ProblemDetail напряму у `HttpServletResponse`
-- До цього 401/403 з JWT-фільтра поверталися у дефолтному Spring Security форматі, а не ProblemDetail
+### 15.7 Реалізовано після Фази 9
 
-Реальний avg_rating на AssetPage ✅
-- `GET /api/v1/assets/{assetId}/reviews/stats` → `ReviewStatsDto(avgRating, count)` у `ReviewController` + `ReviewService.getStats()`
-- `ReviewStatsDto.java` новий DTO; `ReviewRepository` вже мав `findAverageRatingByAssetId` + `countByAssetId`
-- Frontend: `fetchReviewStats` у `reviewApi.ts`; `useReviewStats` + `reviewKeys.stats` у `useReviews.ts`
-- `AssetPage` trust bar: показує реальний рейтинг з лічильником; приховується якщо відгуків 0
-- `useCreateReview.onSuccess` інвалідує `['reviews', assetId]` → накриває і stats, і list
+**`AuthenticationEntryPoint` + `AccessDeniedHandler` у `SecurityConfig`**
+- `SecurityConfig` отримав `ObjectMapper` через `@RequiredArgsConstructor`
+- `handleUnauthorized` / `handleForbidden` пишуть JSON `ProblemDetail` напряму у `HttpServletResponse`
 
-Router — виправлено баг ProtectedRoute + lazy ✅
-- React Router v7: `element` статично визначений перемагає `Component` з `lazy` — lazy-компонент не рендерився
-- `ProtectedRoute` тепер рендерить `<Outlet />` коли `children` не передані
-- `router.tsx` переписано на layout-routes: три групи `{ element: <ProtectedRoute [requiredRole]>, children: [...] }`
+**Верифікований автор badge**
+- `AssetDetailDto` і `AssetSummaryDto` — нове поле `authorVerified: boolean`
+- `AdminService.verifyUser()` + `PUT /admin/users/{id}/verify?verified=true/false`
+- `AssetPage`: "Verified Author" chip; `AssetCard`: зелена іконка поруч з іменем
+- `UsersPage`: клікабельний chip → toggle через `useVerifyUser` mutation
 
-QR-код SecurityPage — замінено на qrcode.react ✅
-- `npm install qrcode.react@4.2.0`; `QRCodeSVG` з `qrcode.react` замінює `<img src="api.qrserver.com/...">`
-- Більше немає зовнішніх HTTP-запитів для генерації QR; працює offline
-
-ProfilePage — реалізовано ✅
-- Нова картка акаунту (аватар-прев'ю, роль, email, verified badge)
-- Форма редагування: displayName, avatarUrl (URL), bio (textarea 1000 символів)
-- Backend: `UpdateProfileRequestDto`, `PATCH /api/v1/auth/me` у `AuthController`, `AuthService.updateProfile()`
+**ProfilePage**
+- Картка акаунту (аватар-прев'ю, роль, email, verified badge) + форма редагування (displayName, avatarUrl, bio)
+- Backend: `UpdateProfileRequestDto`, `PATCH /api/v1/auth/me`, `AuthService.updateProfile()`
 - `UserResponseDto` + `UserDto` (frontend) отримали поле `bio`
-- `SecurityConfig`: явні правила `authenticated()` для `GET/PATCH /auth/me` перед `permitAll` на `auth/**`
+- `SecurityConfig`: явні `authenticated()` правила для `GET/PATCH /auth/me` перед `permitAll` на `auth/**`
 
-Верифікований автор badge ✅
-- `AssetDetailDto` і `AssetSummaryDto` — нове поле `authorVerified: boolean` (`a.getAuthor().isVerified()`)
-- `AdminService.verifyUser(Long id, boolean verified)` + `PUT /api/v1/admin/users/{id}/verify?verified=true/false`
-- `AssetPage`: "Verified Author" chip показується лише якщо `asset.authorVerified === true`
-- `AssetCard`: зелена `VerifiedIcon` (13px) поруч з іменем автора якщо `authorVerified`
-- `UsersPage`: chip у колонці "Верифікований" клікабельний — toggle через `useVerifyUser` mutation
-- `adminApi.ts` + `useAdmin.ts`: `verifyUser` / `useVerifyUser`
+**Реальний avg_rating на AssetPage**
+- `GET /assets/{assetId}/reviews/stats` → `ReviewStatsDto(avgRating, count)`
+- `AssetPage` trust bar: реальний рейтинг + лічильник; ховається якщо відгуків 0
+- `useCreateReview.onSuccess` інвалідує `['reviews', assetId]` — накриває і stats, і list
+
+**Router — виправлено баг ProtectedRoute + lazy**
+- React Router v7: статичний `element` перемагає `Component` з `lazy` — сторінка не рендерилась
+- `ProtectedRoute` рендерить `<Outlet />` коли `children` відсутні
+- `router.tsx`: layout-routes `ProtectedRoute → DashboardLayout → page`
+
+**QR-код у SecurityPage → `qrcode.react`**
+- `qrcode.react@4.2.0`; `QRCodeSVG` замінює `<img src="api.qrserver.com/...">`
+- Генерація локальна, без зовнішніх запитів, працює offline
+
+**DashboardLayout**
+- `widgets/DashboardLayout/DashboardLayout.tsx`: Navbar + sticky sidebar (240px, desktop) + `<Outlet />`
+- Sidebar секції: Загальне (всі ролі) / Автор (ROLE_AUTHOR) / Адміністрування (ROLE_ADMIN)
+- `NavLink` + `&.active` MUI sx — підсвічування без зайвого state
+- Checkout (`/checkout`, `/checkout/success`) навмисно поза DashboardLayout
+- Видалено `<Navbar />` + `<Footer />` + outer wrapper з 5 сторінок: PurchasesPage, WishlistPage, AssetsPage, AssetUploadPage, AssetEditPage
+
+**`.env.example` — виправлено імена змінних MinIO**
+- `S3_*` → `MINIO_*` щоб відповідати `application.yml` (`MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`)
