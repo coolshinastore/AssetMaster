@@ -7,8 +7,6 @@ import Chip from '@mui/material/Chip'
 import Skeleton from '@mui/material/Skeleton'
 import DownloadIcon from '@mui/icons-material/Download'
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
-import Navbar from '../../widgets/Navbar/Navbar'
-import Footer from '../../widgets/Footer/Footer'
 import { useOrders } from '../../entities/order/api/useOrders'
 import { fetchDownloadUrl } from '../../entities/order/api/orderApi'
 
@@ -25,10 +23,7 @@ export default function PurchasesPage() {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
-
-      <Box sx={{ flex: 1, maxWidth: 1440, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
+    <Box sx={{ maxWidth: 1440, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
         <Typography variant="h2" sx={{ mb: 4 }}>Мої покупки</Typography>
 
         {isLoading && (
@@ -158,9 +153,6 @@ export default function PurchasesPage() {
             ))}
           </Box>
         )}
-      </Box>
-
-      <Footer />
     </Box>
   )
 }

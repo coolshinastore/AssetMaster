@@ -16,8 +16,6 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Chip from '@mui/material/Chip'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
-import Navbar from '../../widgets/Navbar/Navbar'
-import Footer from '../../widgets/Footer/Footer'
 import { useAssetDetail, useCategories } from '../../entities/asset/api/useAssets'
 import { useUpdateAsset } from '../../features/author-assets/useAuthorAssets'
 import { useAuth } from '../../features/auth/AuthContext'
@@ -95,30 +93,22 @@ export default function AssetEditPage() {
 
   if (loadingAsset) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <Navbar />
-        <Box sx={{ flex: 1, maxWidth: 760, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
-          <Skeleton variant="text" width={200} height={48} sx={{ mb: 4 }} />
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} variant="rectangular" height={56} sx={{ mb: 2, borderRadius: 2 }} />
-          ))}
-        </Box>
-        <Footer />
+      <Box sx={{ maxWidth: 760, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
+        <Skeleton variant="text" width={200} height={48} sx={{ mb: 4 }} />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} variant="rectangular" height={56} sx={{ mb: 2, borderRadius: 2 }} />
+        ))}
       </Box>
     )
   }
 
   if (!asset || !isOwner) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <Navbar />
-        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2 }}>
-          <Typography variant="h5">Актив не знайдено або немає доступу</Typography>
-          <Button variant="contained" onClick={() => navigate('/dashboard/assets')}>
-            До моїх активів
-          </Button>
-        </Box>
-        <Footer />
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 2, py: 12 }}>
+        <Typography variant="h5">Актив не знайдено або немає доступу</Typography>
+        <Button variant="contained" onClick={() => navigate('/dashboard/assets')}>
+          До моїх активів
+        </Button>
       </Box>
     )
   }
@@ -126,10 +116,7 @@ export default function AssetEditPage() {
   const statusInfo = STATUS_LABELS[asset.status] ?? { label: asset.status, color: 'default' as const }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
-
-      <Box sx={{ flex: 1, maxWidth: 760, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
+    <Box sx={{ maxWidth: 760, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
           <Button
             onClick={() => navigate('/dashboard/assets')}
@@ -287,9 +274,6 @@ export default function AssetEditPage() {
             </Button>
           </Box>
         </Box>
-      </Box>
-
-      <Footer />
     </Box>
   )
 }

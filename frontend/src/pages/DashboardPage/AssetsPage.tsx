@@ -17,8 +17,6 @@ import AddIcon from '@mui/icons-material/Add'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import ImageNotSupportedOutlinedIcon from '@mui/icons-material/ImageNotSupportedOutlined'
-import Navbar from '../../widgets/Navbar/Navbar'
-import Footer from '../../widgets/Footer/Footer'
 import { useMyAssets, useDeleteAsset } from '../../features/author-assets/useAuthorAssets'
 import type { AuthorAssetDto } from '../../entities/asset/types'
 
@@ -40,10 +38,8 @@ export default function AssetsPage() {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
-
-      <Box sx={{ flex: 1, maxWidth: 1200, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
+    <>
+      <Box sx={{ maxWidth: 1200, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Typography variant="h2">Мої активи</Typography>
           <Button
@@ -177,8 +173,6 @@ export default function AssetsPage() {
         )}
       </Box>
 
-      <Footer />
-
       {/* Delete confirmation dialog */}
       <Dialog open={!!toDelete} onClose={() => setToDelete(null)}>
         <DialogTitle>Видалити актив?</DialogTitle>
@@ -194,6 +188,6 @@ export default function AssetsPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   )
 }

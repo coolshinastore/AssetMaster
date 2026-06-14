@@ -1,5 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom'
 import ProtectedRoute from '../shared/components/ProtectedRoute'
+import DashboardLayout from '../widgets/DashboardLayout/DashboardLayout'
 
 const router = createBrowserRouter([
   // ── Public ──────────────────────────────────────────────────
@@ -46,13 +47,11 @@ const router = createBrowserRouter([
     lazy: () => import('../pages/auth/EmailVerificationPage').then(m => ({ Component: m.default })),
   },
 
-  // ── Cart (public, no auth required) ─────────────────────────
+  // ── Cart & Checkout ──────────────────────────────────────────
   {
     path: '/cart',
     lazy: () => import('../pages/CartPage/CartPage').then(m => ({ Component: m.default })),
   },
-
-  // ── Authenticated routes ─────────────────────────────────────
   {
     element: <ProtectedRoute />,
     children: [
@@ -64,65 +63,81 @@ const router = createBrowserRouter([
         path: '/checkout/success',
         lazy: () => import('../pages/CheckoutPage/CheckoutSuccessPage').then(m => ({ Component: m.default })),
       },
-      {
-        path: '/dashboard/purchases',
-        lazy: () => import('../pages/DashboardPage/PurchasesPage').then(m => ({ Component: m.default })),
-      },
-      {
-        path: '/dashboard/wishlist',
-        lazy: () => import('../pages/DashboardPage/WishlistPage').then(m => ({ Component: m.default })),
-      },
-      {
-        path: '/dashboard/profile',
-        lazy: () => import('../pages/DashboardPage/ProfilePage').then(m => ({ Component: m.default })),
-      },
-      {
-        path: '/dashboard/security',
-        lazy: () => import('../pages/DashboardPage/SecurityPage').then(m => ({ Component: m.default })),
-      },
     ],
+  },
+
+  // ── Dashboard (all authenticated users) ─────────────────────
+  {
+    element: <ProtectedRoute />,
+    children: [{
+      element: <DashboardLayout />,
+      children: [
+        {
+          path: '/dashboard/profile',
+          lazy: () => import('../pages/DashboardPage/ProfilePage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/dashboard/purchases',
+          lazy: () => import('../pages/DashboardPage/PurchasesPage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/dashboard/wishlist',
+          lazy: () => import('../pages/DashboardPage/WishlistPage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/dashboard/security',
+          lazy: () => import('../pages/DashboardPage/SecurityPage').then(m => ({ Component: m.default })),
+        },
+      ],
+    }],
   },
 
   // ── Author dashboard ─────────────────────────────────────────
   {
     element: <ProtectedRoute requiredRole="ROLE_AUTHOR" />,
-    children: [
-      {
-        path: '/dashboard/assets',
-        lazy: () => import('../pages/DashboardPage/AssetsPage').then(m => ({ Component: m.default })),
-      },
-      {
-        path: '/dashboard/assets/new',
-        lazy: () => import('../pages/DashboardPage/AssetUploadPage').then(m => ({ Component: m.default })),
-      },
-      {
-        path: '/dashboard/assets/:id/edit',
-        lazy: () => import('../pages/DashboardPage/AssetEditPage').then(m => ({ Component: m.default })),
-      },
-      {
-        path: '/dashboard/analytics',
-        lazy: () => import('../pages/DashboardPage/AnalyticsPage').then(m => ({ Component: m.default })),
-      },
-    ],
+    children: [{
+      element: <DashboardLayout />,
+      children: [
+        {
+          path: '/dashboard/assets',
+          lazy: () => import('../pages/DashboardPage/AssetsPage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/dashboard/assets/new',
+          lazy: () => import('../pages/DashboardPage/AssetUploadPage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/dashboard/assets/:id/edit',
+          lazy: () => import('../pages/DashboardPage/AssetEditPage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/dashboard/analytics',
+          lazy: () => import('../pages/DashboardPage/AnalyticsPage').then(m => ({ Component: m.default })),
+        },
+      ],
+    }],
   },
 
   // ── Admin ────────────────────────────────────────────────────
   {
     element: <ProtectedRoute requiredRole="ROLE_ADMIN" />,
-    children: [
-      {
-        path: '/admin',
-        lazy: () => import('../pages/AdminPage/AdminDashboardPage').then(m => ({ Component: m.default })),
-      },
-      {
-        path: '/admin/moderation',
-        lazy: () => import('../pages/AdminPage/ModerationPage').then(m => ({ Component: m.default })),
-      },
-      {
-        path: '/admin/users',
-        lazy: () => import('../pages/AdminPage/UsersPage').then(m => ({ Component: m.default })),
-      },
-    ],
+    children: [{
+      element: <DashboardLayout />,
+      children: [
+        {
+          path: '/admin',
+          lazy: () => import('../pages/AdminPage/AdminDashboardPage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/admin/moderation',
+          lazy: () => import('../pages/AdminPage/ModerationPage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/admin/users',
+          lazy: () => import('../pages/AdminPage/UsersPage').then(m => ({ Component: m.default })),
+        },
+      ],
+    }],
   },
 
   // ── 404 ──────────────────────────────────────────────────────

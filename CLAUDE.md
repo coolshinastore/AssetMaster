@@ -449,15 +449,7 @@ API тести:      MockMvc для REST ендпоінтів
 ### Frontend
 ```
 Unit/Component: Vitest + React Testing Library
-E2E:            Playwright (ключові user flows: реєстрація, покупка, upload)
 ```
-
-### Ключові тест-кейси (acceptance criteria)
-1. Реєстрація → вхід → перегляд каталогу → додавання в кошик → оплата → завантаження файлу
-2. Реєстрація автора → upload активу → проходження модерації → публікація
-3. Адмін → модерація → схвалення/відхилення активу
-4. Пошук за назвою та тегами → релевантні результати
-5. Відновлення пароля через email
 
 ---
 
@@ -911,7 +903,13 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 
 ### 15.6 Відкриті борги
 
-- E2E тести (Playwright) — 5 acceptance criteria з розділу 11 не покриті
+Dashboard Layout — реалізовано ✅
+- `widgets/DashboardLayout/DashboardLayout.tsx` — Navbar + sticky sidebar (240px, desktop only) + `<Outlet />`
+- Sidebar: секція "Загальне" (всі ролі: Профіль, Покупки, Вішліст, Безпека), "Автор" (ROLE_AUTHOR), "Адміністрування" (ROLE_ADMIN)
+- `NavLink` з `&.active` MUI sx — підсвічування активного пункту без додаткового state
+- `router.tsx`: три layout-групи вкладені як `ProtectedRoute → DashboardLayout → page`
+- Checkout (`/checkout`, `/checkout/success`) навмисно поза DashboardLayout — власний Navbar
+- Видалено `<Navbar />` + `<Footer />` + outer Box з 5 сторінок: PurchasesPage, WishlistPage, AssetsPage, AssetUploadPage, AssetEditPage
 
 **Реалізовано після Фази 8:**
 

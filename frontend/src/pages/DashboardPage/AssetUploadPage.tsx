@@ -13,8 +13,6 @@ import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import UploadFileIcon from '@mui/icons-material/UploadFile'
-import Navbar from '../../widgets/Navbar/Navbar'
-import Footer from '../../widgets/Footer/Footer'
 import { useCategories } from '../../entities/asset/api/useAssets'
 import { useCreateAsset } from '../../features/author-assets/useAuthorAssets'
 
@@ -63,10 +61,7 @@ export default function AssetUploadPage() {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
-
-      <Box sx={{ flex: 1, maxWidth: 760, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
+    <Box sx={{ maxWidth: 760, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
           <Button
             onClick={() => navigate('/dashboard/assets')}
@@ -217,9 +212,6 @@ export default function AssetUploadPage() {
             </Button>
           </Box>
         </Box>
-      </Box>
-
-      <Footer />
     </Box>
   )
 }

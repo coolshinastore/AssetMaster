@@ -3,8 +3,6 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
-import Navbar from '../../widgets/Navbar/Navbar'
-import Footer from '../../widgets/Footer/Footer'
 import AssetCard from '../../entities/asset/ui/AssetCard'
 import { useWishlist } from '../../features/wishlist/useWishlist'
 
@@ -12,10 +10,7 @@ export default function WishlistPage() {
   const { data: items, isLoading } = useWishlist()
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
-
-      <Box sx={{ flex: 1, maxWidth: 1440, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
+    <Box sx={{ maxWidth: 1440, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
         <Typography variant="h2" sx={{ mb: 4 }}>Список бажань</Typography>
 
         {isLoading && (
@@ -56,9 +51,6 @@ export default function WishlistPage() {
             ))}
           </Box>
         )}
-      </Box>
-
-      <Footer />
     </Box>
   )
 }
