@@ -19,6 +19,7 @@ import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
+import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined'
 import LogoutIcon from '@mui/icons-material/Logout'
 import { useAuth } from '../../features/auth/AuthContext'
 import { useCart } from '../../features/cart/CartContext'
@@ -166,6 +167,11 @@ export default function Navbar() {
                 <MenuItem onClick={() => handleNavigate('/dashboard/profile')}>
                   <ListItemIcon><PersonOutlinedIcon fontSize="small" /></ListItemIcon>
                   Профіль
+                </MenuItem>
+
+                <MenuItem onClick={() => handleNavigate('/dashboard/security')}>
+                  <ListItemIcon><SecurityOutlinedIcon fontSize="small" /></ListItemIcon>
+                  Безпека
                 </MenuItem>
 
                 <Divider />

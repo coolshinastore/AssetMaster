@@ -13,7 +13,7 @@ import MenuItem from '@mui/material/MenuItem'
 import Chip from '@mui/material/Chip'
 import Skeleton from '@mui/material/Skeleton'
 import TablePagination from '@mui/material/TablePagination'
-import { useAdminUsers, useUpdateUserRole } from '../../features/admin-panel/useAdmin'
+import { useAdminUsers, useUpdateUserRole, useVerifyUser } from '../../features/admin-panel/useAdmin'
 import type { AdminUserDto } from '../../entities/asset/types'
 
 const ROLE_LABELS: Record<AdminUserDto['role'], string> = {
@@ -32,6 +32,7 @@ export default function UsersPage() {
   const [page, setPage] = useState(0)
   const { data, isLoading } = useAdminUsers(page)
   const updateRole = useUpdateUserRole()
+  const verifyUserMutation = useVerifyUser()
 
   const handleRoleChange = (user: AdminUserDto, role: string) => {
     if (role === user.role) return
@@ -104,6 +105,9 @@ export default function UsersPage() {
                         label={user.verified ? 'Так' : 'Ні'}
                         size="small"
                         color={user.verified ? 'success' : 'default'}
+                        onClick={() => verifyUserMutation.mutate({ id: user.id, verified: !user.verified })}
+                        disabled={verifyUserMutation.isPending}
+                        sx={{ cursor: 'pointer' }}
                       />
                     </TableCell>
                     <TableCell>

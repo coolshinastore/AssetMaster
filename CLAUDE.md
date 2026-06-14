@@ -751,6 +751,10 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 | V6 | `V6__create_order_items_table.sql` | Таблиця `order_items` |
 | V7 | `V7__add_rejection_reason_to_assets.sql` | Колонка `rejection_reason TEXT` в `assets` |
 | V8 | `V8__create_reviews_table.sql` | Таблиця `reviews` (UNIQUE asset_id+author_id, GIN index) |
+| V9 | `V9__fix_reviews_rating_type.sql` | `ALTER TABLE reviews ALTER COLUMN rating TYPE INTEGER` — фікс Hibernate validation (SMALLINT vs INTEGER) |
+| V10 | `V10__create_password_reset_tokens.sql` | Таблиця `password_reset_tokens` (token UNIQUE, expires_at, used) |
+| V11 | `V11__add_email_verification.sql` | Колонка `email_verified` в `users` + таблиця `email_verification_tokens` |
+| V12 | `V12__add_totp.sql` | Колонки `totp_secret`, `totp_enabled` в `users` |
 
 ### 15.3 Реалізовані фази
 
@@ -802,6 +806,19 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 - features: `reviews/reviewApi.ts`, `reviews/useReviews.ts`, `analytics/analyticsApi.ts`, `analytics/useAnalytics.ts`
 - Типи `ReviewDto`, `AnalyticsSummaryDto` додані до `entities/asset/types.ts`
 
+**Фаза 8 — Тестування + Polish ✅**
+- Backend: TestContainers додано до `pom.xml` (`spring-boot-testcontainers`, `testcontainers:junit-jupiter`, `testcontainers:postgresql`)
+- `AbstractIntegrationTest` — базовий клас для IT-тестів: `@SpringBootTest(RANDOM_PORT)` + `@Testcontainers` + `PostgreSQLContainer` + `@DynamicPropertySource`
+- `ApiApplicationTests` — оновлено для розширення `AbstractIntegrationTest`
+- `ReviewServiceTest` (4 Mockito unit-тести): 404 asset not found, 403 без покупки, 409 duplicate, success
+- `AdminServiceTest` (6 Mockito unit-тестів): approve/reject flow, `requirePending()` кидає 409, stats, users
+- `AuthServiceTest` (3 Mockito unit-тести): register success, duplicate email → 409, login; `ReflectionTestUtils.setField` для `@Value refreshExpirySec`
+- `AuthIntegrationTest` (4 MockMvc integration-тести): register, duplicate register, login, login wrong password
+- Frontend: встановлено `vitest`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@vitest/coverage-v8`, `jsdom`
+- `vitest.config.ts` — `globals: true`, `environment: jsdom`, `setupFiles: ['./src/test/setup.ts']`, `server.deps.inline` для MUI
+- `src/test/AssetCard.test.tsx` (5 тестів): skeleton, title/price, category chip, author name, link href
+- `src/test/LoginPage.test.tsx` (3 тести): field presence, empty submit → обидві Zod-помилки, невалідний email
+
 ### 15.4 Критичні технічні рішення
 
 **MUI v9 breaking changes** (викликали помилки компіляції у Фазі 2):
@@ -849,34 +866,67 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 - `OrderItemRepository.existsByBuyerIdAndAssetId` вже існував з Фази 4 — переиспользано без змін
 - Відгук без покупки → 403 Forbidden (повідомлення видно у `Alert` на фронтенді)
 
+**Flyway — checksum protection**:
+- Не можна редагувати вже застосовані міграції — Flyway падає з checksum mismatch
+- Виправлення схеми завжди через нову версію (V8 з SMALLINT → V9 виправляє через `ALTER COLUMN ... TYPE INTEGER`)
+
+**Vitest 4.x + MUI v9 — `server.deps.inline`**:
+- `@mui/material/internal/Transition.mjs` імпортує `react-transition-group/TransitionGroupContext` як directory import
+- Node.js ESM не підтримує directory imports → помилка при запуску тестів
+- Фікс: `test.server.deps.inline: ['react-transition-group', '@mui/material', '@mui/icons-material']` у `vitest.config.ts` — змушує Vitest обробляти ці пакети через Vite bundler (з ESM/CJS interop)
+- `resolve.alias` та `deps.optimizer.web.include` для цього не підходять — вони не поширюються на транзитивні імпорти всередині `node_modules`
+
+**AuthServiceTest — специфіка**:
+- `RegisterRequestDto` конструктор: `(email, displayName, password)` — НЕ `(email, password, displayName)`
+- `jwtService.generateAccessToken(user)` — правильна назва методу (не `generateToken`)
+- `ReflectionTestUtils.setField(authService, "refreshExpirySec", 3600L)` в `@BeforeEach` для інжекції `@Value` поля
+
+**Фаза 9 — Email + 2FA ✅**
+- Migrations: V10 (password_reset_tokens), V11 (email_verified + email_verification_tokens), V12 (totp_secret + totp_enabled)
+- Backend entities: `PasswordResetToken`, `EmailVerificationToken` + відповідні repositories
+- `EmailService`: Gmail SMTP через `MimeMessage` + HTML-шаблони; `@Async` (потребує `@EnableAsync` на `ApiApplication`); fallback warn-лог якщо `MAIL_USERNAME` порожній; `app.base-url` у `application.yml`
+- `TotpService`: HMAC-SHA1 TOTP без зовнішніх залежностей — власний Base32 encode/decode, ±1 window для clock skew
+- `JwtService`: `generatePartialToken()` (5 хв, `2fa_pending: true` claim) + `isPartialToken()` + `isTokenValid()` відхиляє partial tokens
+- `AuthResponseDto`: discriminated union `{ requires2fa, partialToken, accessToken, user }` + factory methods `success()` / `pending2fa()`
+- `UserResponseDto`: додано `emailVerified`, `totpEnabled`
+- `AuthService`: 8 нових методів (register/login з email+2FA, verify2fa, verifyEmail, resendVerification, forgotPassword, resetPassword, setupTotp, enableTotp, disableTotp)
+- `AuthController`: 8 нових ендпоінтів (GET `/verify-email`, POST `/verify-email/resend`, `/forgot-password`, `/reset-password`, `/2fa/verify`, GET `/2fa/setup`, POST `/2fa/enable`, `/2fa/disable`)
+- `DataInitializer`: seed-користувачі мають `emailVerified(true)`
+- Frontend `features/auth/types.ts`: `AuthResponse` discriminated union, `UserDto` з `emailVerified`+`totpEnabled`, `LoginResult` type
+- Frontend `features/auth/authApi.ts`: 9 API-функцій для нових ендпоінтів
+- Frontend `AuthContext`: `login()` повертає `LoginResult`; додано `verify2fa()`, `refreshUser()`
+- Frontend: `LoginPage` — 2-кроковий flow (credentials → TOTP step state machine)
+- Frontend: `RegisterPage` — після успіху показує "Перевірте пошту" замість redirect
+- Frontend нові сторінки: `ForgotPasswordPage`, `ResetPasswordPage` (замінює stub), `EmailVerificationPage` (auto-verify on mount), `SecurityPage` (TOTP setup + enable/disable)
+- Router: нові маршрути `/auth/forgot-password`, `/auth/verify-email`, `/dashboard/security`
+- Navbar: "Безпека" MenuItem у dropdown → `/dashboard/security`
+- `LoginPage.test.tsx`: mock `login` повертає `{ requires2fa: false }`, додано mock `verify2fa`
+
 ### 15.5 Відомі обмеження (demo-режим)
 
 - Платіжний шлюз: відсутній — замовлення підтверджуються миттєво
 - Download URL: seed-активи не мають `fileKey` → повертається `previewUrls[0]`; реальні файли в MinIO потребують окремого upload
-- Email: відновлення пароля, підтвердження реєстрації — не реалізовано (stub сторінки)
-- 2FA: в роутері є `/auth/reset-password` але логіка не реалізована
+- Email: відправляється через Gmail SMTP (`MAIL_USERNAME` + `MAIL_PASSWORD` App Password у `.env`); якщо SMTP не налаштований — warn у лог з fallback текстом посилання
+- QR-код у SecurityPage: використовує публічний API `api.qrserver.com` — у production замінити на `qrcode.react` без зовнішніх запитів
 - Відгуки: середній рейтинг активу обчислюється на льоту через `AVG` запит, не кешується — для масштабу треба денормалізувати у `assets.avg_rating`
 - Аналітика: рейтинг у trust bar на `AssetPage` захардкоджений (4.9) — не підключений до реального `AVG(reviews.rating)` по активу
-- `AuthenticationEntryPoint` не налаштований → 401 від JWT-фільтра повертає дефолтну Spring Security відповідь (не ProblemDetail формат)
 
-### 15.6 Наступні фази
+### 15.6 Відкриті борги
 
-**Фаза 8 — Тестування + Polish** (наступна):
+- Підключити реальний `avg_rating` на `AssetPage` (зараз 4.9 захардкоджено) — додати `GET /assets/{id}/reviews/stats` → `{ avgRating, count }`
+- E2E тести (Playwright) — 5 acceptance criteria з розділу 11 не покриті
+- QR-код SecurityPage: замінити `api.qrserver.com` на `qrcode.react` для production
 
-Backend тести:
-- `ReviewServiceTest` — мокати `OrderItemRepository.existsByBuyerIdAndAssetId` + перевіряти 403/409
-- `AdminServiceTest` — перевіряти `requirePending()` кидає 409 якщо статус не PENDING
-- `AssetControllerTest` (MockMvc) — публічні ендпоінти без токена, захищені з токеном
-- `AuthServiceTest` — реєстрація дублю email → 409
-- Integration test (TestContainers) — повний flow: register → login → create asset → approve → review
+**Реалізовано після Фази 8:**
 
-Frontend тести:
-- `AssetCard.test.tsx` — hover стани, wishlist toggle
-- `LoginPage.test.tsx` — валідація форми, успішний submit
-- Playwright E2E — 5 acceptance criteria з розділу 11
+`AuthenticationEntryPoint` + `AccessDeniedHandler` у `SecurityConfig` ✅
+- `SecurityConfig` отримав `ObjectMapper` через `@RequiredArgsConstructor`; методи `handleUnauthorized` / `handleForbidden` пишуть JSON ProblemDetail напряму у `HttpServletResponse`
+- До цього 401/403 з JWT-фільтра поверталися у дефолтному Spring Security форматі, а не ProblemDetail
 
-Polish (відомі борги):
-- Підключити реальний `avg_rating` на `AssetPage` (зараз 4.9 захардкоджено) — додати поле або обчислювати через API
-- `AuthenticationEntryPoint` у `SecurityConfig` — повертати ProblemDetail для 401 з фільтрів
-- Верифікований автор badge (`is_verified`) — логіка верифікації не реалізована, поле є в БД
-- `AssetPage` рейтинг у trust bar: додати `GET /assets/{id}/reviews/stats` → `{ avgRating, count }`
+Верифікований автор badge ✅
+- `AssetDetailDto` і `AssetSummaryDto` — нове поле `authorVerified: boolean` (`a.getAuthor().isVerified()`)
+- `AdminService.verifyUser(Long id, boolean verified)` + `PUT /api/v1/admin/users/{id}/verify?verified=true/false`
+- `AssetPage`: "Verified Author" chip показується лише якщо `asset.authorVerified === true`
+- `AssetCard`: зелена `VerifiedIcon` (13px) поруч з іменем автора якщо `authorVerified`
+- `UsersPage`: chip у колонці "Верифікований" клікабельний — toggle через `useVerifyUser` mutation
+- `adminApi.ts` + `useAdmin.ts`: `verifyUser` / `useVerifyUser`

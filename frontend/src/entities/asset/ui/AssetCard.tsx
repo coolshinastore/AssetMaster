@@ -9,6 +9,7 @@ import IconButton from '@mui/material/IconButton'
 import Button from '@mui/material/Button'
 import FavoriteIcon from '@mui/icons-material/Favorite'
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
+import VerifiedIcon from '@mui/icons-material/Verified'
 import { useAuth } from '../../../features/auth/AuthContext'
 import { useToggleWishlist } from '../../../features/wishlist/useWishlist'
 import type { AssetSummaryDto } from '../types'
@@ -130,9 +131,14 @@ function AssetCardContent({ asset }: { asset: AssetSummaryDto }) {
           >
             {asset.title}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', mb: 1 }}>
-            {asset.authorName}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+              {asset.authorName}
+            </Typography>
+            {asset.authorVerified && (
+              <VerifiedIcon sx={{ fontSize: 13, color: 'success.main' }} />
+            )}
+          </Box>
           <Typography variant="subtitle2" sx={{ color: 'primary.main', fontWeight: 700 }}>
             ${asset.price}
           </Typography>

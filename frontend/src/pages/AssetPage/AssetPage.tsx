@@ -422,7 +422,9 @@ export default function AssetPage() {
                 <Typography variant="body2" color="text.secondary">
                   {asset.downloadsCount.toLocaleString()} продажів
                 </Typography>
-                <Chip label="Verified Author" size="small" color="success" sx={{ fontSize: '0.7rem', height: 22 }} />
+                {asset.authorVerified && (
+                  <Chip label="Verified Author" size="small" color="success" sx={{ fontSize: '0.7rem', height: 22 }} />
+                )}
               </Box>
             </Box>
 

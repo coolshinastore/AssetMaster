@@ -3,12 +3,15 @@ package com.assetmaster.api.dto;
 import com.assetmaster.api.entity.User;
 
 public record UserResponseDto(
-        Long id,
-        String email,
-        String displayName,
-        String role,
-        String avatarUrl,
-        boolean verified
+        Long    id,
+        String  email,
+        String  displayName,
+        String  role,
+        String  avatarUrl,
+        String  bio,
+        boolean verified,
+        boolean emailVerified,
+        boolean totpEnabled
 ) {
     public static UserResponseDto fromEntity(User user) {
         return new UserResponseDto(
@@ -17,7 +20,10 @@ public record UserResponseDto(
                 user.getDisplayName(),
                 user.getRole().name(),
                 user.getAvatarUrl(),
-                user.isVerified()
+                user.getBio(),
+                user.isVerified(),
+                user.isEmailVerified(),
+                user.isTotpEnabled()
         );
     }
 }

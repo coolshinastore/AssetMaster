@@ -34,8 +34,16 @@ const router = createBrowserRouter([
     lazy: () => import('../pages/auth/RegisterPage').then(m => ({ Component: m.default })),
   },
   {
+    path: '/auth/forgot-password',
+    lazy: () => import('../pages/auth/ForgotPasswordPage').then(m => ({ Component: m.default })),
+  },
+  {
     path: '/auth/reset-password',
     lazy: () => import('../pages/auth/ResetPasswordPage').then(m => ({ Component: m.default })),
+  },
+  {
+    path: '/auth/verify-email',
+    lazy: () => import('../pages/auth/EmailVerificationPage').then(m => ({ Component: m.default })),
   },
 
   // ── Buyer dashboard ─────────────────────────────────────────
@@ -67,6 +75,11 @@ const router = createBrowserRouter([
     path: '/dashboard/profile',
     element: <ProtectedRoute><div /></ProtectedRoute>,
     lazy: () => import('../pages/DashboardPage/ProfilePage').then(m => ({ Component: m.default })),
+  },
+  {
+    path: '/dashboard/security',
+    element: <ProtectedRoute><div /></ProtectedRoute>,
+    lazy: () => import('../pages/DashboardPage/SecurityPage').then(m => ({ Component: m.default })),
   },
 
   // ── Author dashboard ─────────────────────────────────────────

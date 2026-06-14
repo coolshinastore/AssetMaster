@@ -5,6 +5,7 @@ export interface AssetSummaryDto {
   authorId: number
   authorName: string | null
   authorAvatarUrl: string | null
+  authorVerified: boolean
   categoryId: number | null
   categoryName: string | null
   price: number
@@ -21,6 +22,7 @@ export interface AssetDetailDto {
   authorId: number
   authorName: string | null
   authorAvatarUrl: string | null
+  authorVerified: boolean
   categoryId: number | null
   categoryName: string | null
   categorySlug: string | null

@@ -67,4 +67,12 @@ public class AdminController {
             @RequestBody @Valid UpdateUserRoleRequestDto request) {
         return adminService.updateUserRole(id, request.role());
     }
+
+    @PutMapping("/users/{id}/verify")
+    @Operation(summary = "Верифікувати або зняти верифікацію автора")
+    public AdminUserDto verifyUser(
+            @PathVariable Long id,
+            @RequestParam boolean verified) {
+        return adminService.verifyUser(id, verified);
+    }
 }

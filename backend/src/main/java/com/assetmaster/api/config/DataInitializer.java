@@ -63,6 +63,7 @@ public class DataInitializer implements ApplicationRunner {
                 .displayName("AssetMaster Admin")
                 .role(Role.ROLE_ADMIN)
                 .verified(true)
+                .emailVerified(true)
                 .build());
 
         User author = userRepository.save(User.builder()
@@ -71,6 +72,7 @@ public class DataInitializer implements ApplicationRunner {
                 .displayName("Demo Studio")
                 .role(Role.ROLE_AUTHOR)
                 .verified(true)
+                .emailVerified(true)
                 .build());
 
         Map<String, Category> cats = categoryRepository.findAll().stream()

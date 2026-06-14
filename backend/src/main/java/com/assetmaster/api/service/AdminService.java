@@ -77,6 +77,14 @@ public class AdminService {
         return AdminUserDto.fromEntity(userRepository.save(user));
     }
 
+    @Transactional
+    public AdminUserDto verifyUser(Long id, boolean verified) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Користувача не знайдено"));
+        user.setVerified(verified);
+        return AdminUserDto.fromEntity(userRepository.save(user));
+    }
+
     private Asset findAssetOrThrow(Long id) {
         return assetRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Актив не знайдено"));

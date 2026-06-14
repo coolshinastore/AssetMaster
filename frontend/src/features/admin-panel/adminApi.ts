@@ -18,3 +18,6 @@ export const fetchAdminUsers = (page = 0, size = 20): Promise<PageResponse<Admin
 
 export const updateUserRole = (id: number, role: string): Promise<AdminUserDto> =>
   client.put(`/admin/users/${id}/role`, { role }).then(r => r.data)
+
+export const verifyUser = (id: number, verified: boolean): Promise<AdminUserDto> =>
+  client.put(`/admin/users/${id}/verify`, null, { params: { verified } }).then(r => r.data)

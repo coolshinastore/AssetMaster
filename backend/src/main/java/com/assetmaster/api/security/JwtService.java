@@ -24,12 +24,28 @@ public class JwtService {
     @Value("${app.jwt.refresh-expiry-sec}")
     private long refreshExpirySec;
 
+    private static final String CLAIM_2FA_PENDING = "2fa_pending";
+    private static final long   PARTIAL_TOKEN_MS  = 5 * 60 * 1000L; // 5 min
+
     public String generateAccessToken(UserDetails user) {
-        return buildToken(user.getUsername(), accessExpirySec * 1000L);
+        return buildToken(user.getUsername(), accessExpirySec * 1000L, false);
     }
 
     public String generateRefreshToken(UserDetails user) {
-        return buildToken(user.getUsername(), refreshExpirySec * 1000L);
+        return buildToken(user.getUsername(), refreshExpirySec * 1000L, false);
+    }
+
+    /** Short-lived token used only during the 2FA verification step. */
+    public String generatePartialToken(UserDetails user) {
+        return buildToken(user.getUsername(), PARTIAL_TOKEN_MS, true);
+    }
+
+    public boolean isPartialToken(String token) {
+        try {
+            return Boolean.TRUE.equals(parseClaims(token).get(CLAIM_2FA_PENDING, Boolean.class));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public String extractUsername(String token) {
@@ -39,7 +55,7 @@ public class JwtService {
     public boolean isTokenValid(String token, UserDetails user) {
         try {
             String username = extractUsername(token);
-            return username.equals(user.getUsername()) && !isExpired(token);
+            return username.equals(user.getUsername()) && !isExpired(token) && !isPartialToken(token);
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
@@ -57,14 +73,14 @@ public class JwtService {
                 .getPayload();
     }
 
-    private String buildToken(String subject, long expiryMs) {
+    private String buildToken(String subject, long expiryMs, boolean partial) {
         long now = System.currentTimeMillis();
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(subject)
                 .issuedAt(new Date(now))
-                .expiration(new Date(now + expiryMs))
-                .signWith(signingKey())
-                .compact();
+                .expiration(new Date(now + expiryMs));
+        if (partial) builder.claim(CLAIM_2FA_PENDING, true);
+        return builder.signWith(signingKey()).compact();
     }
 
     private SecretKey signingKey() {

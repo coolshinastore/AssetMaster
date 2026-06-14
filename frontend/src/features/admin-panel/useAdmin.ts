@@ -6,6 +6,7 @@ import {
   rejectAsset,
   fetchAdminUsers,
   updateUserRole,
+  verifyUser,
 } from './adminApi'
 
 const adminKeys = {
@@ -52,6 +53,14 @@ export function useUpdateUserRole() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, role }: { id: number; role: string }) => updateUserRole(id, role),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
+export function useVerifyUser() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, verified }: { id: number; verified: boolean }) => verifyUser(id, verified),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
   })
 }
