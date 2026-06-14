@@ -2,6 +2,7 @@ package com.assetmaster.api.controller;
 
 import com.assetmaster.api.dto.CreateReviewRequestDto;
 import com.assetmaster.api.dto.ReviewDto;
+import com.assetmaster.api.dto.ReviewStatsDto;
 import com.assetmaster.api.entity.User;
 import com.assetmaster.api.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +21,12 @@ import org.springframework.web.bind.annotation.*;
 public class ReviewController {
 
     private final ReviewService reviewService;
+
+    @GetMapping("/stats")
+    @Operation(summary = "Середній рейтинг та кількість відгуків")
+    public ReviewStatsDto getStats(@PathVariable Long assetId) {
+        return reviewService.getStats(assetId);
+    }
 
     @GetMapping
     @Operation(summary = "Відгуки на актив")

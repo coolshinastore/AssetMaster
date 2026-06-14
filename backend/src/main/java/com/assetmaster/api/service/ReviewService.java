@@ -1,6 +1,7 @@
 package com.assetmaster.api.service;
 
 import com.assetmaster.api.dto.ReviewDto;
+import com.assetmaster.api.dto.ReviewStatsDto;
 import com.assetmaster.api.entity.Asset;
 import com.assetmaster.api.entity.Review;
 import com.assetmaster.api.entity.User;
@@ -30,6 +31,12 @@ public class ReviewService {
         return reviewRepository
                 .findByAssetIdOrderByCreatedAtDesc(assetId, PageRequest.of(page, size))
                 .map(ReviewDto::fromEntity);
+    }
+
+    public ReviewStatsDto getStats(Long assetId) {
+        Double avg   = reviewRepository.findAverageRatingByAssetId(assetId);
+        long   count = reviewRepository.countByAssetId(assetId);
+        return new ReviewStatsDto(avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0, count);
     }
 
     @Transactional

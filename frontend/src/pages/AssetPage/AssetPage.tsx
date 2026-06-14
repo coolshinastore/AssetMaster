@@ -24,7 +24,7 @@ import Footer from '../../widgets/Footer/Footer'
 import { useAssetDetail } from '../../entities/asset/api/useAssets'
 import { useCart } from '../../features/cart/CartContext'
 import { useAuth } from '../../features/auth/AuthContext'
-import { useReviews, useCreateReview } from '../../features/reviews/useReviews'
+import { useReviews, useReviewStats, useCreateReview } from '../../features/reviews/useReviews'
 
 export default function AssetPage() {
   const { id } = useParams<{ id: string }>()
@@ -40,6 +40,7 @@ export default function AssetPage() {
   const [reviewComment, setReviewComment] = useState('')
   const [reviewError, setReviewError] = useState<string | null>(null)
   const { data: reviews } = useReviews(Number(id), reviewPage)
+  const { data: reviewStats } = useReviewStats(Number(id))
   const createReview = useCreateReview(Number(id))
 
   const handleAddToCart = () => {
@@ -415,10 +416,17 @@ export default function AssetPage() {
                   borderColor: 'divider',
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <StarIcon sx={{ fontSize: 16, color: 'warning.main' }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>4.9</Typography>
-                </Box>
+                {reviewStats && reviewStats.count > 0 && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <StarIcon sx={{ fontSize: 16, color: 'warning.main' }} />
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {reviewStats.avgRating.toFixed(1)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      ({reviewStats.count})
+                    </Typography>
+                  </Box>
+                )}
                 <Typography variant="body2" color="text.secondary">
                   {asset.downloadsCount.toLocaleString()} продажів
                 </Typography>

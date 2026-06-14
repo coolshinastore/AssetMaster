@@ -12,6 +12,7 @@ import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
 import CircularProgress from '@mui/material/CircularProgress'
+import { QRCodeSVG } from 'qrcode.react'
 import { useAuth } from '../../features/auth/AuthContext'
 import * as authApi from '../../features/auth/authApi'
 import type { UserDto } from '../../features/auth/types'
@@ -106,13 +107,9 @@ function TotpSetupSection({ user, onUpdated }: { user: UserDto; onUpdated: () =>
                   Відскануйте QR-код в застосунку-автентифікаторі, або введіть секрет вручну.
                 </Alert>
 
-                {/* QR placeholder — use otpauth:// URI rendered as image via Google Chart API (offline: show manual secret) */}
-                <Box
-                  component="img"
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(setupData.uri)}`}
-                  alt="QR код для 2FA"
-                  sx={{ width: 200, height: 200, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
-                />
+                <Box sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', display: 'inline-flex' }}>
+                  <QRCodeSVG value={setupData.uri} size={180} />
+                </Box>
 
                 <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>

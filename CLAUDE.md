@@ -907,21 +907,40 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 - Платіжний шлюз: відсутній — замовлення підтверджуються миттєво
 - Download URL: seed-активи не мають `fileKey` → повертається `previewUrls[0]`; реальні файли в MinIO потребують окремого upload
 - Email: відправляється через Gmail SMTP (`MAIL_USERNAME` + `MAIL_PASSWORD` App Password у `.env`); якщо SMTP не налаштований — warn у лог з fallback текстом посилання
-- QR-код у SecurityPage: використовує публічний API `api.qrserver.com` — у production замінити на `qrcode.react` без зовнішніх запитів
 - Відгуки: середній рейтинг активу обчислюється на льоту через `AVG` запит, не кешується — для масштабу треба денормалізувати у `assets.avg_rating`
-- Аналітика: рейтинг у trust bar на `AssetPage` захардкоджений (4.9) — не підключений до реального `AVG(reviews.rating)` по активу
 
 ### 15.6 Відкриті борги
 
-- Підключити реальний `avg_rating` на `AssetPage` (зараз 4.9 захардкоджено) — додати `GET /assets/{id}/reviews/stats` → `{ avgRating, count }`
 - E2E тести (Playwright) — 5 acceptance criteria з розділу 11 не покриті
-- QR-код SecurityPage: замінити `api.qrserver.com` на `qrcode.react` для production
 
 **Реалізовано після Фази 8:**
 
 `AuthenticationEntryPoint` + `AccessDeniedHandler` у `SecurityConfig` ✅
 - `SecurityConfig` отримав `ObjectMapper` через `@RequiredArgsConstructor`; методи `handleUnauthorized` / `handleForbidden` пишуть JSON ProblemDetail напряму у `HttpServletResponse`
 - До цього 401/403 з JWT-фільтра поверталися у дефолтному Spring Security форматі, а не ProblemDetail
+
+Реальний avg_rating на AssetPage ✅
+- `GET /api/v1/assets/{assetId}/reviews/stats` → `ReviewStatsDto(avgRating, count)` у `ReviewController` + `ReviewService.getStats()`
+- `ReviewStatsDto.java` новий DTO; `ReviewRepository` вже мав `findAverageRatingByAssetId` + `countByAssetId`
+- Frontend: `fetchReviewStats` у `reviewApi.ts`; `useReviewStats` + `reviewKeys.stats` у `useReviews.ts`
+- `AssetPage` trust bar: показує реальний рейтинг з лічильником; приховується якщо відгуків 0
+- `useCreateReview.onSuccess` інвалідує `['reviews', assetId]` → накриває і stats, і list
+
+Router — виправлено баг ProtectedRoute + lazy ✅
+- React Router v7: `element` статично визначений перемагає `Component` з `lazy` — lazy-компонент не рендерився
+- `ProtectedRoute` тепер рендерить `<Outlet />` коли `children` не передані
+- `router.tsx` переписано на layout-routes: три групи `{ element: <ProtectedRoute [requiredRole]>, children: [...] }`
+
+QR-код SecurityPage — замінено на qrcode.react ✅
+- `npm install qrcode.react@4.2.0`; `QRCodeSVG` з `qrcode.react` замінює `<img src="api.qrserver.com/...">`
+- Більше немає зовнішніх HTTP-запитів для генерації QR; працює offline
+
+ProfilePage — реалізовано ✅
+- Нова картка акаунту (аватар-прев'ю, роль, email, verified badge)
+- Форма редагування: displayName, avatarUrl (URL), bio (textarea 1000 символів)
+- Backend: `UpdateProfileRequestDto`, `PATCH /api/v1/auth/me` у `AuthController`, `AuthService.updateProfile()`
+- `UserResponseDto` + `UserDto` (frontend) отримали поле `bio`
+- `SecurityConfig`: явні правила `authenticated()` для `GET/PATCH /auth/me` перед `permitAll` на `auth/**`
 
 Верифікований автор badge ✅
 - `AssetDetailDto` і `AssetSummaryDto` — нове поле `authorVerified: boolean` (`a.getAuthor().isVerified()`)

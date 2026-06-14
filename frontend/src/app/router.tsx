@@ -46,79 +46,83 @@ const router = createBrowserRouter([
     lazy: () => import('../pages/auth/EmailVerificationPage').then(m => ({ Component: m.default })),
   },
 
-  // ── Buyer dashboard ─────────────────────────────────────────
+  // ── Cart (public, no auth required) ─────────────────────────
   {
     path: '/cart',
     lazy: () => import('../pages/CartPage/CartPage').then(m => ({ Component: m.default })),
   },
+
+  // ── Authenticated routes ─────────────────────────────────────
   {
-    path: '/checkout',
-    element: <ProtectedRoute><div /></ProtectedRoute>,
-    lazy: () => import('../pages/CheckoutPage/CheckoutPage').then(m => ({ Component: m.default })),
-  },
-  {
-    path: '/checkout/success',
-    element: <ProtectedRoute><div /></ProtectedRoute>,
-    lazy: () => import('../pages/CheckoutPage/CheckoutSuccessPage').then(m => ({ Component: m.default })),
-  },
-  {
-    path: '/dashboard/purchases',
-    element: <ProtectedRoute><div /></ProtectedRoute>,
-    lazy: () => import('../pages/DashboardPage/PurchasesPage').then(m => ({ Component: m.default })),
-  },
-  {
-    path: '/dashboard/wishlist',
-    element: <ProtectedRoute><div /></ProtectedRoute>,
-    lazy: () => import('../pages/DashboardPage/WishlistPage').then(m => ({ Component: m.default })),
-  },
-  {
-    path: '/dashboard/profile',
-    element: <ProtectedRoute><div /></ProtectedRoute>,
-    lazy: () => import('../pages/DashboardPage/ProfilePage').then(m => ({ Component: m.default })),
-  },
-  {
-    path: '/dashboard/security',
-    element: <ProtectedRoute><div /></ProtectedRoute>,
-    lazy: () => import('../pages/DashboardPage/SecurityPage').then(m => ({ Component: m.default })),
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '/checkout',
+        lazy: () => import('../pages/CheckoutPage/CheckoutPage').then(m => ({ Component: m.default })),
+      },
+      {
+        path: '/checkout/success',
+        lazy: () => import('../pages/CheckoutPage/CheckoutSuccessPage').then(m => ({ Component: m.default })),
+      },
+      {
+        path: '/dashboard/purchases',
+        lazy: () => import('../pages/DashboardPage/PurchasesPage').then(m => ({ Component: m.default })),
+      },
+      {
+        path: '/dashboard/wishlist',
+        lazy: () => import('../pages/DashboardPage/WishlistPage').then(m => ({ Component: m.default })),
+      },
+      {
+        path: '/dashboard/profile',
+        lazy: () => import('../pages/DashboardPage/ProfilePage').then(m => ({ Component: m.default })),
+      },
+      {
+        path: '/dashboard/security',
+        lazy: () => import('../pages/DashboardPage/SecurityPage').then(m => ({ Component: m.default })),
+      },
+    ],
   },
 
   // ── Author dashboard ─────────────────────────────────────────
   {
-    path: '/dashboard/assets',
-    element: <ProtectedRoute requiredRole="ROLE_AUTHOR"><div /></ProtectedRoute>,
-    lazy: () => import('../pages/DashboardPage/AssetsPage').then(m => ({ Component: m.default })),
-  },
-  {
-    path: '/dashboard/assets/new',
-    element: <ProtectedRoute requiredRole="ROLE_AUTHOR"><div /></ProtectedRoute>,
-    lazy: () => import('../pages/DashboardPage/AssetUploadPage').then(m => ({ Component: m.default })),
-  },
-  {
-    path: '/dashboard/assets/:id/edit',
-    element: <ProtectedRoute requiredRole="ROLE_AUTHOR"><div /></ProtectedRoute>,
-    lazy: () => import('../pages/DashboardPage/AssetEditPage').then(m => ({ Component: m.default })),
-  },
-  {
-    path: '/dashboard/analytics',
-    element: <ProtectedRoute requiredRole="ROLE_AUTHOR"><div /></ProtectedRoute>,
-    lazy: () => import('../pages/DashboardPage/AnalyticsPage').then(m => ({ Component: m.default })),
+    element: <ProtectedRoute requiredRole="ROLE_AUTHOR" />,
+    children: [
+      {
+        path: '/dashboard/assets',
+        lazy: () => import('../pages/DashboardPage/AssetsPage').then(m => ({ Component: m.default })),
+      },
+      {
+        path: '/dashboard/assets/new',
+        lazy: () => import('../pages/DashboardPage/AssetUploadPage').then(m => ({ Component: m.default })),
+      },
+      {
+        path: '/dashboard/assets/:id/edit',
+        lazy: () => import('../pages/DashboardPage/AssetEditPage').then(m => ({ Component: m.default })),
+      },
+      {
+        path: '/dashboard/analytics',
+        lazy: () => import('../pages/DashboardPage/AnalyticsPage').then(m => ({ Component: m.default })),
+      },
+    ],
   },
 
   // ── Admin ────────────────────────────────────────────────────
   {
-    path: '/admin',
-    element: <ProtectedRoute requiredRole="ROLE_ADMIN"><div /></ProtectedRoute>,
-    lazy: () => import('../pages/AdminPage/AdminDashboardPage').then(m => ({ Component: m.default })),
-  },
-  {
-    path: '/admin/moderation',
-    element: <ProtectedRoute requiredRole="ROLE_ADMIN"><div /></ProtectedRoute>,
-    lazy: () => import('../pages/AdminPage/ModerationPage').then(m => ({ Component: m.default })),
-  },
-  {
-    path: '/admin/users',
-    element: <ProtectedRoute requiredRole="ROLE_ADMIN"><div /></ProtectedRoute>,
-    lazy: () => import('../pages/AdminPage/UsersPage').then(m => ({ Component: m.default })),
+    element: <ProtectedRoute requiredRole="ROLE_ADMIN" />,
+    children: [
+      {
+        path: '/admin',
+        lazy: () => import('../pages/AdminPage/AdminDashboardPage').then(m => ({ Component: m.default })),
+      },
+      {
+        path: '/admin/moderation',
+        lazy: () => import('../pages/AdminPage/ModerationPage').then(m => ({ Component: m.default })),
+      },
+      {
+        path: '/admin/users',
+        lazy: () => import('../pages/AdminPage/UsersPage').then(m => ({ Component: m.default })),
+      },
+    ],
   },
 
   // ── 404 ──────────────────────────────────────────────────────

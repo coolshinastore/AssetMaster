@@ -1,11 +1,11 @@
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../features/auth/AuthContext'
 import type { ReactNode } from 'react'
 import CircularProgress from '@mui/material/CircularProgress'
 import Box from '@mui/material/Box'
 
 interface Props {
-  children: ReactNode
+  children?: ReactNode
   requiredRole?: 'ROLE_USER' | 'ROLE_AUTHOR' | 'ROLE_ADMIN'
 }
 
@@ -29,5 +29,5 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
     return <Navigate to="/" replace />
   }
 
-  return <>{children}</>
+  return children ? <>{children}</> : <Outlet />
 }
