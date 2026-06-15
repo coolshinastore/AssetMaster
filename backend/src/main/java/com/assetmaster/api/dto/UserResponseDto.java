@@ -11,7 +11,9 @@ public record UserResponseDto(
         String  bio,
         boolean verified,
         boolean emailVerified,
-        boolean totpEnabled
+        boolean totpEnabled,
+        boolean stripeConnected,
+        boolean stripeOnboardingComplete
 ) {
     public static UserResponseDto fromEntity(User user) {
         return new UserResponseDto(
@@ -23,7 +25,9 @@ public record UserResponseDto(
                 user.getBio(),
                 user.isVerified(),
                 user.isEmailVerified(),
-                user.isTotpEnabled()
+                user.isTotpEnabled(),
+                user.getStripeAccountId() != null,
+                user.isStripeOnboardingComplete()
         );
     }
 }

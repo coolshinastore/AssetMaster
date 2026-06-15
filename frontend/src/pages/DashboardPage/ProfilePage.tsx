@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import Alert from '@mui/material/Alert'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -11,8 +12,9 @@ import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
 import TextField from '@mui/material/TextField'
+import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
-import Alert from '@mui/material/Alert'
+import CameraAltOutlinedIcon from '@mui/icons-material/CameraAltOutlined'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined'
 import { useAuth } from '../../features/auth/AuthContext'
 import * as authApi from '../../features/auth/authApi'
@@ -25,7 +27,6 @@ const ROLE_LABELS: Record<string, string> = {
 
 const profileSchema = z.object({
   displayName: z.string().min(2, 'Мінімум 2 символи').max(80, 'Максимум 80 символів'),
-  avatarUrl: z.string().max(2048, 'URL занадто довгий').url('Невалідний URL').or(z.literal('')),
   bio: z.string().max(1000, 'Максимум 1000 символів'),
 })
 type ProfileForm = z.infer<typeof profileSchema>
@@ -34,6 +35,9 @@ export default function ProfilePage() {
   const { user, refreshUser } = useAuth()
   const [success, setSuccess] = useState(false)
   const [apiError, setApiError] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const {
     register,
@@ -44,12 +48,30 @@ export default function ProfilePage() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       displayName: user?.displayName ?? '',
-      avatarUrl: user?.avatarUrl ?? '',
       bio: user?.bio ?? '',
     },
   })
 
-  const avatarUrlValue = watch('avatarUrl')
+  const handleAvatarClick = () => fileInputRef.current?.click()
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadError('')
+    setUploading(true)
+    try {
+      await authApi.uploadAvatar(file)
+      await refreshUser()
+    } catch (err: unknown) {
+      const msg =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+        'Не вдалося завантажити фото'
+      setUploadError(msg)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
 
   const onSubmit = async (data: ProfileForm) => {
     setSuccess(false)
@@ -57,7 +79,6 @@ export default function ProfilePage() {
     try {
       await authApi.updateProfile({
         displayName: data.displayName,
-        avatarUrl: data.avatarUrl,
         bio: data.bio,
       })
       await refreshUser()
@@ -81,19 +102,53 @@ export default function ProfilePage() {
         Публічна інформація про ваш акаунт.
       </Typography>
 
-      {/* Account info — read-only */}
+      {/* Account info — avatar is clickable */}
       <Card sx={{ border: '1px solid', borderColor: 'divider', mb: 3 }}>
         <CardContent sx={{ p: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
             Акаунт
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            <Avatar
-              src={avatarUrlValue || user.avatarUrl || undefined}
-              sx={{ width: 64, height: 64, fontSize: 28, bgcolor: 'primary.main' }}
-            >
-              {(user.displayName ?? user.email)[0].toUpperCase()}
-            </Avatar>
+            {/* Clickable avatar with upload overlay */}
+            <Tooltip title="Клікніть, щоб змінити фото" placement="bottom">
+              <Box
+                onClick={handleAvatarClick}
+                sx={{ position: 'relative', width: 72, height: 72, cursor: 'pointer', flexShrink: 0 }}
+              >
+                <Avatar
+                  src={user.avatarUrl || undefined}
+                  sx={{ width: 72, height: 72, fontSize: 30, bgcolor: 'primary.main' }}
+                >
+                  {(user.displayName ?? user.email)[0].toUpperCase()}
+                </Avatar>
+
+                {/* Camera overlay */}
+                <Box
+                  sx={{
+                    position: 'absolute', inset: 0, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    bgcolor: 'rgba(0,0,0,0.45)', opacity: 0,
+                    transition: 'opacity 0.2s',
+                    '&:hover': { opacity: 1 },
+                  }}
+                >
+                  <CameraAltOutlinedIcon sx={{ color: 'white', fontSize: 26 }} />
+                </Box>
+
+                {/* Upload progress ring */}
+                {uploading && (
+                  <CircularProgress
+                    size={72}
+                    thickness={3}
+                    sx={{
+                      position: 'absolute', top: 0, left: 0,
+                      color: 'primary.main',
+                    }}
+                  />
+                )}
+              </Box>
+            </Tooltip>
+
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
                 <Typography variant="body1" sx={{ fontWeight: 600 }}>
@@ -112,8 +167,26 @@ export default function ProfilePage() {
               <Typography variant="body2" color="text.secondary">
                 {user.email}
               </Typography>
+              <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
+                JPEG, PNG або WebP · до 2 МБ
+              </Typography>
             </Box>
           </Box>
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            style={{ display: 'none' }}
+            onChange={handleAvatarChange}
+          />
+
+          {uploadError && (
+            <Alert severity="error" sx={{ mt: 2, borderRadius: 2 }} onClose={() => setUploadError('')}>
+              {uploadError}
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
@@ -147,15 +220,6 @@ export default function ProfilePage() {
               {...register('displayName')}
               error={!!errors.displayName}
               helperText={errors.displayName?.message}
-            />
-
-            <TextField
-              label="URL аватара"
-              fullWidth
-              placeholder="https://example.com/avatar.jpg"
-              {...register('avatarUrl')}
-              error={!!errors.avatarUrl}
-              helperText={errors.avatarUrl?.message ?? 'Пряме посилання на зображення'}
             />
 
             <TextField

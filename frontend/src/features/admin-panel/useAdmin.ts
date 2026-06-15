@@ -12,6 +12,7 @@ import {
   fetchAdminPayouts,
   triggerPayout,
   updatePayoutStatus,
+  executeStripeTransfer,
   fetchAdminCategories,
   createCategory,
   updateCategory,
@@ -108,6 +109,14 @@ export function useUpdatePayoutStatus() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) => updatePayoutStatus(id, status),
+    onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.finance }),
+  })
+}
+
+export function useExecuteStripeTransfer() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => executeStripeTransfer(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.finance }),
   })
 }

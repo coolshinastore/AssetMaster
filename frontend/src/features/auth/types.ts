@@ -8,6 +8,8 @@ export interface UserDto {
   verified: boolean
   emailVerified: boolean
   totpEnabled: boolean
+  stripeConnected: boolean
+  stripeOnboardingComplete: boolean
 }
 
 export type AuthResponse =

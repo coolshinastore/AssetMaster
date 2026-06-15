@@ -10,6 +10,7 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
+    Optional<User> findByStripeAccountId(String stripeAccountId);
 
     @Query(nativeQuery = true, value = """
             SELECT TO_CHAR(created_at, 'YYYY-MM') AS month, COUNT(*) AS new_users

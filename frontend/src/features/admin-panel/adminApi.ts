@@ -72,6 +72,7 @@ export interface PayoutDto {
   periodEnd: string
   processedAt: string | null
   notes: string | null
+  stripeTransferId: string | null
   createdAt: string
 }
 
@@ -91,6 +92,9 @@ export const triggerPayout = (req: TriggerPayoutRequest): Promise<PayoutDto> =>
 
 export const updatePayoutStatus = (id: number, status: string): Promise<PayoutDto> =>
   client.put(`/admin/finance/payouts/${id}/status`, null, { params: { status } }).then(r => r.data)
+
+export const executeStripeTransfer = (id: number): Promise<PayoutDto> =>
+  client.post(`/admin/finance/payouts/${id}/transfer`).then(r => r.data)
 
 export const fetchAdminCategories = (): Promise<CategoryDto[]> =>
   client.get('/admin/categories').then(r => r.data)

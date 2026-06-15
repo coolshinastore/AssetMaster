@@ -56,6 +56,13 @@ app:
     bucket: ${MINIO_BUCKET:assetmaster}
   base-url: ${APP_BASE_URL:http://localhost:5173}
 
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY:}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+  connect:
+    return-url: ${APP_BASE_URL:http://localhost:5173}/dashboard/payments?stripe=success
+    refresh-url: ${APP_BASE_URL:http://localhost:5173}/dashboard/payments?stripe=refresh
+
 server:
   port: ${SERVER_PORT:8080}
   servlet:

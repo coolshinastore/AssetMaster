@@ -41,6 +41,9 @@ public class Payout {
 
     private String notes;
 
+    @Column(name = "stripe_transfer_id", length = 100)
+    private String stripeTransferId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

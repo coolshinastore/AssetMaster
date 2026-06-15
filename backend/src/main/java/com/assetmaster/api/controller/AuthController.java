@@ -3,7 +3,9 @@ package com.assetmaster.api.controller;
 import com.assetmaster.api.dto.*;
 import com.assetmaster.api.entity.User;
 import com.assetmaster.api.exception.ApiException;
+import com.assetmaster.api.repository.UserRepository;
 import com.assetmaster.api.service.AuthService;
+import com.assetmaster.api.service.StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,9 +13,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -22,6 +26,24 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final StorageService storageService;
+    private final UserRepository userRepository;
+
+    // ── Helpers ───────────────────────────────────────────────
+
+    /** If avatarUrl is a MinIO key (starts with "avatars/"), resolve to a fresh presigned URL. */
+    private UserResponseDto resolveAvatar(UserResponseDto dto) {
+        String url = dto.avatarUrl();
+        if (url != null && url.startsWith("avatars/")) {
+            String freshUrl = storageService.generatePresignedUrl(url);
+            return new UserResponseDto(
+                    dto.id(), dto.email(), dto.displayName(), dto.role(),
+                    freshUrl, dto.bio(), dto.verified(), dto.emailVerified(), dto.totpEnabled(),
+                    dto.stripeConnected(), dto.stripeOnboardingComplete()
+            );
+        }
+        return dto;
+    }
 
     // ── Core auth ─────────────────────────────────────────────
 
@@ -63,7 +85,7 @@ public class AuthController {
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Дані поточного авторизованого користувача")
     public ResponseEntity<UserResponseDto> me(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(UserResponseDto.fromEntity(user));
+        return ResponseEntity.ok(resolveAvatar(UserResponseDto.fromEntity(user)));
     }
 
     @PatchMapping("/me")
@@ -72,7 +94,26 @@ public class AuthController {
     public ResponseEntity<UserResponseDto> updateMe(
             @Valid @RequestBody UpdateProfileRequestDto request,
             @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(authService.updateProfile(user, request));
+        return ResponseEntity.ok(resolveAvatar(authService.updateProfile(user, request)));
+    }
+
+    @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "Завантаження фото аватара")
+    public ResponseEntity<UserResponseDto> uploadAvatar(
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal User user) {
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Дозволені лише зображення (JPEG, PNG, WebP)");
+        }
+        if (file.getSize() > 2 * 1024 * 1024) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Розмір файлу не більше 2 МБ");
+        }
+        String key = storageService.uploadAvatarFile(file);
+        user.setAvatarUrl(key);
+        userRepository.save(user);
+        return ResponseEntity.ok(resolveAvatar(UserResponseDto.fromEntity(user)));
     }
 
     // ── Email verification ────────────────────────────────────

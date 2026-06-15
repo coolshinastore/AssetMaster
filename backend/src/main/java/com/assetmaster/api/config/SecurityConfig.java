@@ -61,9 +61,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/auth/me").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/me/avatar").authenticated()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/api/v1/assets/mine").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/assets/**", "/api/v1/categories/**", "/api/v1/blog/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/stripe/webhooks").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated()

@@ -41,6 +41,7 @@ import {
   useAdminPayouts,
   useTriggerPayout,
   useUpdatePayoutStatus,
+  useExecuteStripeTransfer,
 } from '../../features/admin-panel/useAdmin'
 import type { PayoutDto, TriggerPayoutRequest } from '../../features/admin-panel/adminApi'
 
@@ -111,17 +112,35 @@ function PayoutsTab() {
   const [page] = useState(0)
   const { data, isLoading } = useAdminPayouts(page)
   const updateStatus = useUpdatePayoutStatus()
+  const executeTransfer = useExecuteStripeTransfer()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [transferError, setTransferError] = useState<string | null>(null)
 
   const payouts = data?.content ?? []
 
+  function handleStripeTransfer(id: number) {
+    setTransferError(null)
+    executeTransfer.mutate(id, {
+      onError: (err: unknown) => {
+        const msg = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail
+        setTransferError(msg ?? 'Помилка виконання Stripe Transfer')
+      },
+    })
+  }
+
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, gap: 1 }}>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
           Нова виплата
         </Button>
       </Box>
+
+      {transferError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setTransferError(null)}>
+          {transferError}
+        </Alert>
+      )}
 
       <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
         <Table size="small">
@@ -132,8 +151,8 @@ function PayoutsTab() {
               <TableCell>Період</TableCell>
               <TableCell align="right">Сума</TableCell>
               <TableCell>Статус</TableCell>
-              <TableCell>Примітки</TableCell>
-              <TableCell align="center">Дія</TableCell>
+              <TableCell>Stripe Transfer</TableCell>
+              <TableCell align="center">Дії</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -149,6 +168,7 @@ function PayoutsTab() {
             )}
             {!isLoading && payouts.map((p: PayoutDto) => {
               const s = STATUS_CHIP[p.status] ?? { label: p.status, color: 'default' as const }
+              const isTransferring = executeTransfer.isPending && executeTransfer.variables === p.id
               return (
                 <TableRow key={p.id} hover>
                   <TableCell sx={{ color: 'text.disabled', fontSize: '0.75rem' }}>{p.id}</TableCell>
@@ -160,26 +180,52 @@ function PayoutsTab() {
                   <TableCell>
                     <Chip label={s.label} color={s.color} size="small" sx={{ fontSize: '0.7rem' }} />
                   </TableCell>
-                  <TableCell sx={{ color: 'text.secondary', fontSize: '0.8rem', maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {p.notes ?? '—'}
+                  <TableCell sx={{ fontSize: '0.75rem' }}>
+                    {p.stripeTransferId ? (
+                      <Tooltip title={p.stripeTransferId}>
+                        <Chip
+                          label={p.stripeTransferId.slice(0, 14) + '…'}
+                          size="small"
+                          color="success"
+                          variant="outlined"
+                          sx={{ fontSize: '0.65rem', fontFamily: 'monospace' }}
+                        />
+                      </Tooltip>
+                    ) : (
+                      <Typography variant="caption" color="text.disabled">—</Typography>
+                    )}
                   </TableCell>
                   <TableCell align="center">
-                    {p.status !== 'PAID' && p.status !== 'FAILED' && (
-                      <Tooltip title="Змінити статус">
-                        <Select
-                          size="small"
-                          value={p.status}
-                          onChange={e => updateStatus.mutate({ id: p.id, status: e.target.value })}
-                          sx={{ fontSize: '0.75rem', '& .MuiSelect-select': { py: 0.25, px: 1 } }}
-                          IconComponent={SwapHorizIcon}
-                        >
-                          <MenuItem value="PENDING">Очікує</MenuItem>
-                          <MenuItem value="PROCESSING">В обробці</MenuItem>
-                          <MenuItem value="PAID">Виплачено</MenuItem>
-                          <MenuItem value="FAILED">Помилка</MenuItem>
-                        </Select>
-                      </Tooltip>
-                    )}
+                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                      {p.status !== 'PAID' && !p.stripeTransferId && (
+                        <Tooltip title="Виконати через Stripe Transfer">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            disabled={isTransferring}
+                            onClick={() => handleStripeTransfer(p.id)}
+                          >
+                            <SwapHorizIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {p.status !== 'PAID' && p.status !== 'FAILED' && (
+                        <Tooltip title="Змінити статус вручну">
+                          <Select
+                            size="small"
+                            value={p.status}
+                            onChange={e => updateStatus.mutate({ id: p.id, status: e.target.value })}
+                            sx={{ fontSize: '0.75rem', '& .MuiSelect-select': { py: 0.25, px: 1 } }}
+                            IconComponent={SwapHorizIcon}
+                          >
+                            <MenuItem value="PENDING">Очікує</MenuItem>
+                            <MenuItem value="PROCESSING">В обробці</MenuItem>
+                            <MenuItem value="PAID">Виплачено</MenuItem>
+                            <MenuItem value="FAILED">Помилка</MenuItem>
+                          </Select>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                 </TableRow>
               )

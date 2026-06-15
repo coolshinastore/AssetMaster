@@ -49,6 +49,37 @@ public class StorageService {
     }
 
     /**
+     * Uploads avatar image to MinIO under the "avatars/" prefix and returns the object key.
+     * Falls back to a simulated key if MinIO is not configured.
+     */
+    public String uploadAvatarFile(MultipartFile file) {
+        String ext = Optional.ofNullable(file.getOriginalFilename())
+                .filter(n -> n.contains("."))
+                .map(n -> n.substring(n.lastIndexOf('.')))
+                .orElse(".jpg");
+        String key = "avatars/" + UUID.randomUUID() + ext;
+
+        if (minioClient == null) {
+            log.warn("MinIO not configured — avatar upload simulated, key: {}", key);
+            return key;
+        }
+        try {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(key)
+                            .stream(file.getInputStream(), file.getSize(), -1)
+                            .contentType(file.getContentType() != null ? file.getContentType() : "image/jpeg")
+                            .build()
+            );
+            return key;
+        } catch (Exception e) {
+            log.error("Failed to upload avatar: {}", e.getMessage(), e);
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Не вдалося завантажити аватар");
+        }
+    }
+
+    /**
      * Uploads file to MinIO and returns the object key.
      * Falls back to a simulated key if MinIO is not configured.
      */

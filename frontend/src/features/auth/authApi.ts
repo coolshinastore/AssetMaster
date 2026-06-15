@@ -10,6 +10,14 @@ export interface UpdateProfileRequest {
 export const updateProfile = (data: UpdateProfileRequest) =>
   apiClient.patch<UserDto>('/auth/me', data)
 
+export const uploadAvatar = (file: File): Promise<UserDto> => {
+  const form = new FormData()
+  form.append('file', file)
+  return apiClient.post<UserDto>('/auth/me/avatar', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }).then(r => r.data)
+}
+
 export const forgotPassword = (email: string) =>
   apiClient.post('/auth/forgot-password', { email })
 

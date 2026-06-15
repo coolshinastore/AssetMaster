@@ -1,6 +1,9 @@
+import { useSearchParams } from 'react-router-dom'
+import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
+import CircularProgress from '@mui/material/CircularProgress'
 import Divider from '@mui/material/Divider'
 import Paper from '@mui/material/Paper'
 import Skeleton from '@mui/material/Skeleton'
@@ -13,10 +16,13 @@ import TableRow from '@mui/material/TableRow'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined'
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
 import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined'
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
+import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined'
 import { useAuth } from '../../features/auth/AuthContext'
 import { useMyPayouts } from '../../features/analytics/usePayouts'
+import { useStripeConnectStatus, useStartStripeOnboarding } from '../../features/stripe/useStripe'
 
 const STATUS_CHIP: Record<string, { label: string; color: 'success' | 'warning' | 'info' | 'error' | 'default' }> = {
   PAID:       { label: 'Виплачено',  color: 'success' },
@@ -100,9 +106,85 @@ function PayoutsHistory() {
   )
 }
 
+function StripeConnectSection() {
+  const { data: status, isLoading } = useStripeConnectStatus()
+  const onboard = useStartStripeOnboarding()
+
+  if (isLoading) {
+    return (
+      <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <CircularProgress size={20} />
+        <Typography variant="body2" color="text.secondary">Перевірка статусу Stripe...</Typography>
+      </Paper>
+    )
+  }
+
+  if (!status?.enabled) {
+    return (
+      <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+          <LinkOutlinedIcon color="action" />
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>Stripe Connect</Typography>
+          <Chip label="Не налаштовано" size="small" variant="outlined" />
+        </Box>
+        <Typography variant="body2" color="text.secondary">
+          Stripe не підключено на сервері. Зверніться до адміністратора для налаштування STRIPE_SECRET_KEY.
+        </Typography>
+      </Paper>
+    )
+  }
+
+  if (status.onboardingComplete) {
+    return (
+      <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2, borderColor: 'success.light' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+          <CheckCircleOutlinedIcon color="success" />
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>Stripe Connect</Typography>
+          <Chip label="Підключено" color="success" size="small" />
+        </Box>
+        <Typography variant="body2" color="text.secondary">
+          Ваш Stripe рахунок підключено та верифіковано. Адміністратор може виконувати виплати напряму на ваш рахунок через Stripe Transfer.
+        </Typography>
+      </Paper>
+    )
+  }
+
+  return (
+    <Paper variant="outlined" sx={{ p: 3, mb: 3, borderRadius: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+        <LinkOutlinedIcon color="action" />
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>Stripe Connect</Typography>
+        {status.connected
+          ? <Chip label="Онбординг не завершено" color="warning" size="small" />
+          : <Chip label="Не підключено" size="small" variant="outlined" />
+        }
+      </Box>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        {status.connected
+          ? 'Ви розпочали реєстрацію в Stripe, але не завершили. Продовжіть налаштування, щоб отримувати виплати.'
+          : 'Підключіть свій Stripe рахунок, щоб отримувати виплати роялті напряму на банківський рахунок.'
+        }
+      </Typography>
+      <Button
+        variant="contained"
+        startIcon={onboard.isPending ? <CircularProgress size={16} color="inherit" /> : <LinkOutlinedIcon />}
+        disabled={onboard.isPending}
+        onClick={() => onboard.mutate()}
+      >
+        {status.connected ? 'Завершити налаштування Stripe' : 'Підключити Stripe'}
+      </Button>
+      <Typography variant="caption" color="text.disabled" sx={{ mt: 1, display: 'block' }}>
+        Ви будете перенаправлені на захищену сторінку Stripe для верифікації.
+      </Typography>
+    </Paper>
+  )
+}
+
 export default function PaymentsPage() {
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
   const isAuthor = user?.role === 'ROLE_AUTHOR' || user?.role === 'ROLE_ADMIN'
+  const stripeReturn = searchParams.get('stripe')
 
   return (
     <Box sx={{ maxWidth: 720, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
@@ -110,6 +192,17 @@ export default function PaymentsPage() {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
         Налаштуйте спосіб отримання виплат та збережені методи оплати.
       </Typography>
+
+      {stripeReturn === 'success' && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          Stripe onboarding завершено! Ваш рахунок перевіряється. Статус оновиться автоматично.
+        </Alert>
+      )}
+      {stripeReturn === 'refresh' && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          Посилання для onboarding застаріло. Натисніть "Підключити Stripe" ще раз.
+        </Alert>
+      )}
 
       {/* Demo notice */}
       <Box
@@ -121,9 +214,12 @@ export default function PaymentsPage() {
       >
         <InfoOutlinedIcon fontSize="small" color="primary" sx={{ mt: 0.25 }} />
         <Typography variant="body2" color="primary.dark">
-          Платіжний шлюз у demo-режимі. Реальні транзакції не обробляються.
+          Stripe Connect активний. Для виплат через Stripe автор повинен пройти Express onboarding.
         </Typography>
       </Box>
+
+      {/* Stripe Connect — authors only */}
+      {isAuthor && <StripeConnectSection />}
 
       {/* Payout history — authors only */}
       {isAuthor && <PayoutsHistory />}

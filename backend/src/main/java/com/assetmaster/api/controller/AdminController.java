@@ -124,6 +124,12 @@ public class AdminController {
         return payoutService.updateStatus(id, status);
     }
 
+    @PostMapping("/finance/payouts/{id}/transfer")
+    @Operation(summary = "Виконати виплату через Stripe Transfer")
+    public PayoutDto executeStripeTransfer(@PathVariable Long id) {
+        return payoutService.executePayout(id);
+    }
+
     @GetMapping("/analytics")
     @Operation(summary = "Аналітика платформи")
     public AdminPlatformAnalyticsDto getPlatformAnalytics() {

@@ -732,6 +732,7 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 | V13 | `V13__create_notifications_table.sql` | Таблиця `notifications` (type, title, body, link, is_read) |
 | V14 | `V14__create_payouts_table.sql` | Таблиця `payouts` (author_id FK, amount, payout_status enum, period_start/end, processed_at) |
 | V15 | `V15__create_blog_posts_table.sql` | Таблиця `blog_posts` (slug UNIQUE, tag, title, excerpt, content, published, read_time, author_id FK) |
+| V16 | `V16__add_stripe_fields.sql` | `stripe_account_id`, `stripe_onboarding_complete` в `users`; `stripe_transfer_id` в `payouts` |
 
 ### 15.3 Реалізовані фази
 
@@ -886,6 +887,7 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 - **Email SMTP**: налаштовується через `MAIL_USERNAME` + `MAIL_PASSWORD` (Gmail App Password) у `.env`; якщо не заповнено — warn у лог з повним посиланням замість відправки
 - **avg_rating**: обчислюється на льоту через `AVG` SQL-запит, не кешується — для масштабу варто денормалізувати у `assets.avg_rating`
 - **Комерційна ліцензія**: окремого поля `commercialPrice` в БД немає — фронтенд обчислює `price * 2` для COMMERCIAL; у кошик потрапляє вже перерахована ціна
+- **Аватар**: якщо MinIO не налаштований — upload симулюється (key зберігається, але зображення не завантажується реально); `generatePresignedUrl()` повертає `picsum.photos` placeholder
 
 ### 15.6 Відкриті борги
 
@@ -893,9 +895,9 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 
 | Тема | Статус |
 |------|--------|
-| Платіжний шлюз | Demo-режим — форма є, реальний шлюз не підключений |
+| Платіжний шлюз (покупки) | Demo-режим — замовлення підтверджуються миттєво без реальної оплати |
 | Blog | Керування через `/admin/blog`; публічний блог через API |
-| Payouts | Повний CRUD реалізовано; реальна виплата — лише через адмін-інтерфейс |
+| Stripe Connect | Реалізовано повністю: автор проходить Express onboarding, адмін виконує Transfer |
 
 ### 15.7 Реалізовано після Фази 9 (борги 15.6)
 
@@ -979,7 +981,32 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 - Frontend: `features/blog/blogApi.ts` + `useBlog.ts` (публічні хуки); `adminApi.ts` + `useAdmin.ts` — blog CRUD хуки; `AdminBlogPage.tsx` — таблиця статей з Create/Edit dialog (slug, tag, title, excerpt, content, published, readTime) + delete confirm; `router.tsx` — `/admin/blog`; `DashboardLayout` — "Блог" у adminItems (`ArticleOutlinedIcon`); `BlogPage` та `BlogPostPage` оновлені для використання API замість статичних даних (skeleton loading, error state)
 - `shared/data/blogPosts.ts` залишається у проєкті (використовується як референс), але `BlogPage`/`BlogPostPage` більше не імпортують з нього
 
+**Stripe Connect (split-payments для авторів)**
+- `stripe-java 25.3.0` додано до `pom.xml`; V16 migration (`stripe_account_id`, `stripe_onboarding_complete` в `users`; `stripe_transfer_id` в `payouts`)
+- `User` entity: поля `stripeAccountId` (VARCHAR 100), `stripeOnboardingComplete` (boolean, default false)
+- `Payout` entity: поле `stripeTransferId` (VARCHAR 100)
+- `UserResponseDto`: нові поля `stripeConnected` (= `stripeAccountId != null`) та `stripeOnboardingComplete`
+- `PayoutDto`: нове поле `stripeTransferId`
+- `StripeService`: `isEnabled()` (fallback якщо ключ порожній), `createExpressAccount()`, `createOnboardingLink()`, `isAccountOnboarded()`, `createTransfer()` (amountCents → "usd"), `constructWebhookEvent()`
+- `StripeController`: `POST /stripe/connect/onboard` (ROLE_AUTHOR) → створює/отримує account → повертає `{url}` для редиректу; `GET /stripe/connect/status` (ROLE_AUTHOR|ADMIN) → `{enabled, connected, onboardingComplete}`; `POST /stripe/webhooks` (public) → обробляє `account.updated` → встановлює `stripeOnboardingComplete=true`
+- `PayoutService.executePayout(id)` — валідує payout (не PAID, author має stripeAccountId + onboarding complete) → `StripeService.createTransfer()` → зберігає `stripeTransferId`, `status=PAID`; при StripeException → `status=FAILED`, notes з помилкою
+- `AdminController`: `POST /admin/finance/payouts/{id}/transfer` — викликає `payoutService.executePayout(id)`
+- `SecurityConfig`: `POST /api/v1/stripe/webhooks` permitAll (верифікація через Webhook signature)
+- Frontend `features/stripe/stripeApi.ts` + `useStripe.ts` — `useStripeConnectStatus()`, `useStartStripeOnboarding()` (redirect при onSuccess)
+- Frontend `features/auth/types.ts`: `UserDto` отримав `stripeConnected`, `stripeOnboardingComplete`
+- `adminApi.ts`: `executeStripeTransfer(id)` + `PayoutDto.stripeTransferId`; `useAdmin.ts`: `useExecuteStripeTransfer()`
+- `AdminFinancePage`: PayoutsTab — нова колонка "Stripe Transfer" (chip з Transfer ID або —); кнопка "Виконати через Stripe Transfer" (SwapHorizIcon) для не-PAID виплат без trId; Alert для помилок трансферу
+- `PaymentsPage`: `StripeConnectSection` для авторів — 4 стани (Stripe disabled / not connected / onboarding incomplete / connected); кнопка "Підключити Stripe" → redirect; обробляє `?stripe=success`/`?stripe=refresh` query params
+
 **Критичні технічні рішення (finance/analytics native queries)**:
 - `OrderItemRepository.sumPlatformTotalRevenue()` / `sumPlatformMonthRevenue()` — JPQL та native для platform-wide агрегатів
 - `AdminService.getPlatformAnalytics()` мержить `userRepository.findMonthlyRegistrations()` (users по місяцях) і `orderItemRepository.findPlatformMonthlyRevenue()` через `LinkedHashMap<String, long[]>` де `long[2]` зберігає revenue × 100 (щоб не втрачати дробову частину при merge)
 - `AdminController` — `CategoryService` + `AdminService` ін'єктуються обидва (Lombok `@RequiredArgsConstructor`); category CRUD в тому самому контролері під `@PreAuthorize("hasRole('ROLE_ADMIN')")` на класі
+
+**Завантаження аватара на ProfilePage**
+- `StorageService.uploadAvatarFile(MultipartFile)` — завантажує у префікс `avatars/`, повертає ключ
+- `AuthController` інжектує `StorageService` + `UserRepository`; метод `resolveAvatar(dto)` — якщо `avatarUrl` починається з `"avatars/"`, генерує свіжий presigned URL (без зміни схеми БД)
+- `POST /api/v1/auth/me/avatar` (multipart/form-data, file) — валідація: `image/*`, ≤2 МБ; зберігає ключ в `user.avatarUrl`; SecurityConfig: authenticated()
+- `GET /auth/me` та `PATCH /auth/me` обгорнуті в `resolveAvatar()` — завжди повертають свіжий URL аватара
+- Frontend: `authApi.uploadAvatar(file)` — POST multipart; `ProfilePage` — кліковий Avatar з CameraAltOutlinedIcon overlay + hidden `<input type="file">` + spinner під час upload; URL-поле видалено з форми
+- Zod schema: видалено `avatarUrl` поле; `PATCH /auth/me` відправляє тільки `displayName` + `bio` (без avatarUrl — сервер не торкається існуючого ключа)

@@ -59,6 +59,13 @@ public class User implements UserDetails {
     @Builder.Default
     private boolean totpEnabled = false;
 
+    @Column(name = "stripe_account_id", length = 100)
+    private String stripeAccountId;
+
+    @Column(name = "stripe_onboarding_complete", nullable = false)
+    @Builder.Default
+    private boolean stripeOnboardingComplete = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;

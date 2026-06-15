@@ -16,6 +16,7 @@ public record PayoutDto(
         LocalDate periodEnd,
         Instant processedAt,
         String notes,
+        String stripeTransferId,
         Instant createdAt
 ) {
     public static PayoutDto from(Payout p) {
@@ -29,6 +30,7 @@ public record PayoutDto(
                 p.getPeriodEnd(),
                 p.getProcessedAt(),
                 p.getNotes(),
+                p.getStripeTransferId(),
                 p.getCreatedAt()
         );
     }
