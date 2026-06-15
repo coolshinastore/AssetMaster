@@ -11,6 +11,7 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutlined'
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
 import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined'
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined'
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined'
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
 import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined'
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
@@ -61,6 +62,7 @@ const adminItems: NavItem[] = [
   { label: 'Фінанси',      to: '/admin/finance',      icon: <PaidOutlinedIcon fontSize="small" /> },
   { label: 'Аналітика',    to: '/admin/analytics',    icon: <AnalyticsOutlinedIcon fontSize="small" /> },
   { label: 'Категорії',    to: '/admin/categories',   icon: <CategoryOutlinedIcon fontSize="small" /> },
+  { label: 'Блог',         to: '/admin/blog',         icon: <ArticleOutlinedIcon fontSize="small" /> },
 ]
 
 function SidebarSection({ title, items }: { title?: string; items: NavItem[] }) {

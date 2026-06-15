@@ -103,3 +103,41 @@ export const updateCategory = (id: number, req: UpsertCategoryRequest): Promise<
 
 export const deleteCategory = (id: number): Promise<void> =>
   client.delete(`/admin/categories/${id}`).then(() => undefined)
+
+// ── Blog ──────────────────────────────────────────────────────────
+
+export interface AdminBlogPostDto {
+  id: number
+  slug: string
+  tag: string | null
+  title: string
+  excerpt: string | null
+  content: string
+  published: boolean
+  readTime: string | null
+  authorName: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CreateBlogPostRequest {
+  slug: string
+  tag: string
+  title: string
+  excerpt: string
+  content: string
+  published: boolean
+  readTime: string
+}
+
+export const fetchAdminBlogPosts = (page = 0, size = 20): Promise<PageResponse<AdminBlogPostDto>> =>
+  client.get('/admin/blog', { params: { page, size } }).then(r => r.data)
+
+export const createBlogPost = (req: CreateBlogPostRequest): Promise<AdminBlogPostDto> =>
+  client.post('/admin/blog', req).then(r => r.data)
+
+export const updateBlogPost = (id: number, req: CreateBlogPostRequest): Promise<AdminBlogPostDto> =>
+  client.put(`/admin/blog/${id}`, req).then(r => r.data)
+
+export const deleteBlogPost = (id: number): Promise<void> =>
+  client.delete(`/admin/blog/${id}`).then(() => undefined)

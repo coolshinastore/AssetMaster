@@ -112,6 +112,7 @@ const router = createBrowserRouter([
         { path: '/admin/finance', lazy: () => import('../pages/AdminPage/AdminFinancePage').then(m => ({ Component: m.default })) },
         { path: '/admin/analytics', lazy: () => import('../pages/AdminPage/AdminAnalyticsPage').then(m => ({ Component: m.default })) },
         { path: '/admin/categories', lazy: () => import('../pages/AdminPage/CategoriesPage').then(m => ({ Component: m.default })) },
+        { path: '/admin/blog', lazy: () => import('../pages/AdminPage/AdminBlogPage').then(m => ({ Component: m.default })) },
       ],
     }],
   },

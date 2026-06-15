@@ -5,16 +5,21 @@ import com.assetmaster.api.dto.AdminFinanceSummaryDto;
 import com.assetmaster.api.dto.AdminPlatformAnalyticsDto;
 import com.assetmaster.api.dto.AdminStatsDto;
 import com.assetmaster.api.dto.AdminUserDto;
+import com.assetmaster.api.dto.BlogPostDto;
 import com.assetmaster.api.dto.CategoryDto;
+import com.assetmaster.api.dto.CreateBlogPostRequestDto;
 import com.assetmaster.api.dto.RejectAssetRequestDto;
 import com.assetmaster.api.dto.UpdateUserRoleRequestDto;
 import com.assetmaster.api.dto.UpsertCategoryRequestDto;
 import com.assetmaster.api.dto.PayoutDto;
 import com.assetmaster.api.dto.TriggerPayoutRequestDto;
 import com.assetmaster.api.entity.PayoutStatus;
+import com.assetmaster.api.entity.User;
 import com.assetmaster.api.service.AdminService;
+import com.assetmaster.api.service.BlogPostService;
 import com.assetmaster.api.service.CategoryService;
 import com.assetmaster.api.service.PayoutService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -32,6 +37,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+    private final BlogPostService blogPostService;
     private final CategoryService categoryService;
     private final PayoutService payoutService;
 
@@ -151,5 +157,39 @@ public class AdminController {
     @Operation(summary = "Видалити категорію")
     public void deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
+    }
+
+    // ── Blog CRUD ────────────────────────────────────────────────
+
+    @GetMapping("/blog")
+    @Operation(summary = "Всі статті блогу (опубліковані + чернетки)")
+    public org.springframework.data.domain.Page<BlogPostDto> getBlogPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return blogPostService.getAllPosts(page, size);
+    }
+
+    @PostMapping("/blog")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Створити статтю блогу")
+    public BlogPostDto createBlogPost(
+            @RequestBody @Valid CreateBlogPostRequestDto req,
+            @AuthenticationPrincipal User user) {
+        return blogPostService.createPost(req, user);
+    }
+
+    @PutMapping("/blog/{id}")
+    @Operation(summary = "Оновити статтю блогу")
+    public BlogPostDto updateBlogPost(
+            @PathVariable Long id,
+            @RequestBody @Valid CreateBlogPostRequestDto req) {
+        return blogPostService.updatePost(id, req);
+    }
+
+    @DeleteMapping("/blog/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Видалити статтю блогу")
+    public void deleteBlogPost(@PathVariable Long id) {
+        blogPostService.deletePost(id);
     }
 }

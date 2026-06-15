@@ -731,6 +731,7 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 | V12 | `V12__add_totp.sql` | Колонки `totp_secret`, `totp_enabled` в `users` |
 | V13 | `V13__create_notifications_table.sql` | Таблиця `notifications` (type, title, body, link, is_read) |
 | V14 | `V14__create_payouts_table.sql` | Таблиця `payouts` (author_id FK, amount, payout_status enum, period_start/end, processed_at) |
+| V15 | `V15__create_blog_posts_table.sql` | Таблиця `blog_posts` (slug UNIQUE, tag, title, excerpt, content, published, read_time, author_id FK) |
 
 ### 15.3 Реалізовані фази
 
@@ -893,7 +894,7 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 | Тема | Статус |
 |------|--------|
 | Платіжний шлюз | Demo-режим — форма є, реальний шлюз не підключений |
-| Blog | Статичний контент у `shared/data/blogPosts.ts`, без CMS |
+| Blog | Керування через `/admin/blog`; публічний блог через API |
 | Payouts | Повний CRUD реалізовано; реальна виплата — лише через адмін-інтерфейс |
 
 ### 15.7 Реалізовано після Фази 9 (борги 15.6)
@@ -958,8 +959,8 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 - `/faq`: `FaqPage` (7 Q&A через MUI Accordion)
 - `/licenses`: `LicensesPage` (порівняльна таблиця Standard vs Commercial)
 - `/contact`: `ContactPage` (форма з name/email/subject/message, demo submit)
-- `/blog`: `BlogPage` (6 static posts у card grid)
-- `DashboardLayout` — sidebar: додано Сповіщення/Платіжні реквізити (commonItems) та Фінанси/Аналітика/Категорії (adminItems); `useCommonItems` хук замість константи (для badge)
+- `/blog`: `BlogPage` (6 static posts у card grid; оновлено до API в §15.7 «Блог у адмін-панелі»)
+- `DashboardLayout` — sidebar: додано Сповіщення/Платіжні реквізити (commonItems) та Фінанси/Аналітика/Категорії/Блог (adminItems); `useCommonItems` хук замість константи (для badge)
 - `NotFoundPage` — повноцінна сторінка з великим "404" і кнопками
 
 **Реалізація технічних боргів**
@@ -972,6 +973,11 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 - `features/analytics/payoutsApi.ts` + `usePayouts.ts` — авторський хук
 - `adminApi.ts` + `useAdmin.ts`: `fetchAdminPayouts`, `triggerPayout`, `updatePayoutStatus`, `useAdminPayouts`, `useTriggerPayout`, `useUpdatePayoutStatus`
 - Blog: `shared/data/blogPosts.ts` — масив з 6 постами (slug, tag, title, excerpt, date, readTime, content у markdown-like форматі); `BlogPostPage.tsx` (рендерить контент, знаходить пост за slug, fallback 404); `BlogPage` тепер імпортує з `blogPosts.ts`; роутер `/blog/:slug` → `BlogPostPage`
+
+**Блог у адмін-панелі (після §15.6)**
+- Backend: V15 migration (`blog_posts` таблиця); `BlogPost` entity; `BlogPostRepository`; `BlogPostDto`, `CreateBlogPostRequestDto`; `BlogPostService` (CRUD + public/admin); `BlogPostController` (публічний `GET /api/v1/blog`, `GET /api/v1/blog/:slug`); `AdminController` — blog CRUD (`GET/POST/PUT/DELETE /admin/blog`); `SecurityConfig` — дозволяє `GET /api/v1/blog/**` без авторизації; `DataInitializer` — seed 6 статей
+- Frontend: `features/blog/blogApi.ts` + `useBlog.ts` (публічні хуки); `adminApi.ts` + `useAdmin.ts` — blog CRUD хуки; `AdminBlogPage.tsx` — таблиця статей з Create/Edit dialog (slug, tag, title, excerpt, content, published, readTime) + delete confirm; `router.tsx` — `/admin/blog`; `DashboardLayout` — "Блог" у adminItems (`ArticleOutlinedIcon`); `BlogPage` та `BlogPostPage` оновлені для використання API замість статичних даних (skeleton loading, error state)
+- `shared/data/blogPosts.ts` залишається у проєкті (використовується як референс), але `BlogPage`/`BlogPostPage` більше не імпортують з нього
 
 **Критичні технічні рішення (finance/analytics native queries)**:
 - `OrderItemRepository.sumPlatformTotalRevenue()` / `sumPlatformMonthRevenue()` — JPQL та native для platform-wide агрегатів

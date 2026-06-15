@@ -16,8 +16,13 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  fetchAdminBlogPosts,
+  createBlogPost,
+  updateBlogPost,
+  deleteBlogPost,
   type UpsertCategoryRequest,
   type TriggerPayoutRequest,
+  type CreateBlogPostRequest,
 } from './adminApi'
 
 const adminKeys = {
@@ -27,6 +32,7 @@ const adminKeys = {
   finance: ['admin', 'finance'] as const,
   platformAnalytics: ['admin', 'platform-analytics'] as const,
   categories: ['admin', 'categories'] as const,
+  blog: (page: number) => ['admin', 'blog', page] as const,
 }
 
 export function useAdminStats() {
@@ -135,5 +141,36 @@ export function useDeleteCategory() {
   return useMutation({
     mutationFn: (id: number) => deleteCategory(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.categories }),
+  })
+}
+
+export function useAdminBlogPosts(page = 0) {
+  return useQuery({
+    queryKey: adminKeys.blog(page),
+    queryFn: () => fetchAdminBlogPosts(page),
+  })
+}
+
+export function useCreateBlogPost() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (req: CreateBlogPostRequest) => createBlogPost(req),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'blog'] }),
+  })
+}
+
+export function useUpdateBlogPost() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, req }: { id: number; req: CreateBlogPostRequest }) => updateBlogPost(id, req),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'blog'] }),
+  })
+}
+
+export function useDeleteBlogPost() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => deleteBlogPost(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'blog'] }),
   })
 }
