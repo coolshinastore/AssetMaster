@@ -884,6 +884,7 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 - **Download URL**: seed-активи не мають `fileKey` → повертається `previewUrls[0]`; реальні файли в MinIO потребують окремого upload
 - **Email SMTP**: налаштовується через `MAIL_USERNAME` + `MAIL_PASSWORD` (Gmail App Password) у `.env`; якщо не заповнено — warn у лог з повним посиланням замість відправки
 - **avg_rating**: обчислюється на льоту через `AVG` SQL-запит, не кешується — для масштабу варто денормалізувати у `assets.avg_rating`
+- **Комерційна ліцензія**: окремого поля `commercialPrice` в БД немає — фронтенд обчислює `price * 2` для COMMERCIAL; у кошик потрапляє вже перерахована ціна
 
 ### 15.6 Відкриті борги
 
