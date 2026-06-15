@@ -279,7 +279,8 @@ src/
 │   ├── Footer/
 │   ├── AssetGrid/           — сітка карток з infinite scroll
 │   ├── Sidebar/             — фільтри каталогу
-│   └── DashboardLayout/     — layout для всіх /dashboard та /admin сторінок (Navbar + sticky sidebar + Outlet)
+│   ├── DashboardLayout/     — layout для всіх /dashboard та /admin сторінок (Navbar + sticky sidebar + Outlet)
+│   └── PublicLayout/        — layout для всіх публічних сторінок (Navbar + Outlet + Footer, minHeight 100vh)
 │
 ├── features/
 │   ├── auth/                — login, register, JWT refresh logic
@@ -932,6 +933,14 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 - `NavLink` + `&.active` MUI sx — підсвічування без зайвого state
 - Checkout (`/checkout`, `/checkout/success`) навмисно поза DashboardLayout
 - Видалено `<Navbar />` + `<Footer />` + outer wrapper з 5 сторінок: PurchasesPage, WishlistPage, AssetsPage, AssetUploadPage, AssetEditPage
+
+**PublicLayout**
+- `widgets/PublicLayout/PublicLayout.tsx`: `<Box minHeight:100vh flexDirection:column>` → Navbar + `<Box flex:1><Outlet /></Box>` + Footer
+- Всі публічні сторінки в `router.tsx` обгорнуті одним layout-route `element: <PublicLayout />`
+- Сторінки більше не містять `import Navbar` / `import Footer` — немає дублювання
+- Checkout (`/checkout`, `/checkout/success`) навмисно поза PublicLayout — має власний Navbar+Footer
+- `/500`, `/maintenance` — поза PublicLayout (системні сторінки без layout)
+- MUI v9 іконки: `CheckCircleOutline` → `CheckCircleOutlined`, `HelpOutline` → `HelpOutlined`, `ErrorOutline` → `ErrorOutlined`
 
 **`.env.example` — виправлено імена змінних MinIO**
 - `S3_*` → `MINIO_*` щоб відповідати `application.yml` (`MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`)
