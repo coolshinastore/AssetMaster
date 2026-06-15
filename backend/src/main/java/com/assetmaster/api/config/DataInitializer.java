@@ -3,6 +3,8 @@ package com.assetmaster.api.config;
 import com.assetmaster.api.entity.*;
 import com.assetmaster.api.repository.AssetRepository;
 import com.assetmaster.api.repository.CategoryRepository;
+import com.assetmaster.api.repository.NotificationRepository;
+import com.assetmaster.api.repository.PayoutRepository;
 import com.assetmaster.api.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,8 @@ public class DataInitializer implements ApplicationRunner {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final AssetRepository assetRepository;
+    private final NotificationRepository notificationRepository;
+    private final PayoutRepository payoutRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -37,7 +41,29 @@ public class DataInitializer implements ApplicationRunner {
         log.info("Seeding initial data...");
         seedCategories();
         seedDemoData();
-        log.info("Seed data created successfully.");
+        log.info("Seed data created successfully."); // NOSONAR
+    }
+
+    private void seedPayouts(User author) {
+        payoutRepository.saveAll(java.util.List.of(
+            Payout.builder().author(author).amount(new BigDecimal("127.50"))
+                .status(PayoutStatus.PAID)
+                .periodStart(java.time.LocalDate.of(2026, 4, 1))
+                .periodEnd(java.time.LocalDate.of(2026, 4, 30))
+                .processedAt(java.time.Instant.parse("2026-05-05T10:00:00Z"))
+                .notes("Квітень 2026").build(),
+            Payout.builder().author(author).amount(new BigDecimal("84.20"))
+                .status(PayoutStatus.PAID)
+                .periodStart(java.time.LocalDate.of(2026, 3, 1))
+                .periodEnd(java.time.LocalDate.of(2026, 3, 31))
+                .processedAt(java.time.Instant.parse("2026-04-04T10:00:00Z"))
+                .notes("Березень 2026").build(),
+            Payout.builder().author(author).amount(new BigDecimal("201.00"))
+                .status(PayoutStatus.PENDING)
+                .periodStart(java.time.LocalDate.of(2026, 5, 1))
+                .periodEnd(java.time.LocalDate.of(2026, 5, 31))
+                .notes("Травень 2026 — очікує обробки").build()
+        ));
     }
 
     private void seedCategories() {
@@ -57,7 +83,7 @@ public class DataInitializer implements ApplicationRunner {
     }
 
     private void seedDemoData() {
-        userRepository.save(User.builder()
+        User admin = userRepository.save(User.builder()
                 .email("admin@gmail.com")
                 .passwordHash(passwordEncoder.encode("admin123"))
                 .displayName("AssetMaster Admin")
@@ -169,5 +195,25 @@ public class DataInitializer implements ApplicationRunner {
                     .licenseType(LicenseType.STANDARD)
                     .build());
         }
+
+        seedNotifications(author, admin);
+        seedPayouts(author);
+    }
+
+    private void seedNotifications(User author, User admin) {
+        notificationRepository.saveAll(List.of(
+            Notification.builder().user(author).type("ASSET_APPROVED").title("Актив схвалено")
+                .body("Ваш актив «Sci-Fi Spaceship Pack» опубліковано та доступний у каталозі.")
+                .link("/dashboard/assets").build(),
+            Notification.builder().user(author).type("ORDER_PLACED").title("Нова покупка")
+                .body("Покупець придбав «Dashboard UI Kit Pro» за $29.99.")
+                .link("/dashboard/analytics").build(),
+            Notification.builder().user(author).type("NEW_REVIEW").title("Новий відгук")
+                .body("На ваш актив «RPG Character Sprites Pack» залишили відгук ★5.")
+                .link("/assets/12").read(true).build(),
+            Notification.builder().user(admin).type("SYSTEM").title("Нові активи на перевірці")
+                .body("3 активи очікують модерації.")
+                .link("/admin/moderation").build()
+        ));
     }
 }

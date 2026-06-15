@@ -112,17 +112,6 @@ CI/CD:       (заплановано)
 
 ## 3. Архітектура системи
 
-### Загальна схема
-```
-Browser (React SPA)
-    │  HTTPS / REST JSON
-    ▼
-Spring Boot API (stateless)
-    │              │
-    ▼              ▼
-PostgreSQL     Cloud Storage (S3)
-(основні дані) (файли активів)
-```
 
 ### Принципи
 - **Stateless API** — сесія зберігається на клієнті у вигляді JWT (localStorage)
@@ -457,16 +446,7 @@ Unit/Component: Vitest + React Testing Library
 ## 12. Наступні кроки розробки
 
 ```
-[ ] Розділ 2.3 — Структура БД (ER-діаграма, опис таблиць)
-[ ] Розділ 2.4.1 — Клієнтська частина (детальний опис компонентів)
-[ ] Розділ 2.4.2 — Admin частина
-[ ] Розділ 2.5 — Тестування (checklist, test plan)
-[ ] Розділ 3 — Спеціальний розділ (deploy, інструкції)
-[ ] Реалізація Spring Boot проекту (структура пакетів, entities, repositories)
-[ ] Реалізація React проекту (Vite scaffold, MUI theme, routing)
-[ ] API інтеграція
-[ ] Docker Compose (backend + frontend + postgres)
-```
+
 
 ---
 
@@ -748,6 +728,8 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 | V10 | `V10__create_password_reset_tokens.sql` | Таблиця `password_reset_tokens` (token UNIQUE, expires_at, used) |
 | V11 | `V11__add_email_verification.sql` | Колонка `email_verified` в `users` + таблиця `email_verification_tokens` |
 | V12 | `V12__add_totp.sql` | Колонки `totp_secret`, `totp_enabled` в `users` |
+| V13 | `V13__create_notifications_table.sql` | Таблиця `notifications` (type, title, body, link, is_read) |
+| V14 | `V14__create_payouts_table.sql` | Таблиця `payouts` (author_id FK, amount, payout_status enum, period_start/end, processed_at) |
 
 ### 15.3 Реалізовані фази
 
@@ -904,19 +886,15 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 
 ### 15.6 Відкриті борги
 
-Сторінки зі sitemap, які ще не реалізовані:
+Усі технічні борги закриті. Залишаються тільки demo-обмеження:
 
-| Маршрут | Опис |
-|---------|------|
-| `/dashboard/notifications` | Список сповіщень |
-| `/dashboard/payments` | Платіжні реквізити |
-| `/admin/categories` | Управління деревом категорій (CRUD) |
-| `/admin/finance` | Транзакції та виплати авторам |
-| `/admin/analytics` | Звіти, трафік |
-| `/500`, `/maintenance` | Системні сторінки |
-| `/about`, `/faq`, `/licenses`, `/contact`, `/blog` | Контентні сторінки |
+| Тема | Статус |
+|------|--------|
+| Платіжний шлюз | Demo-режим — форма є, реальний шлюз не підключений |
+| Blog | Статичний контент у `shared/data/blogPosts.ts`, без CMS |
+| Payouts | Повний CRUD реалізовано; реальна виплата — лише через адмін-інтерфейс |
 
-### 15.7 Реалізовано після Фази 9
+### 15.7 Реалізовано після Фази 9 (борги 15.6)
 
 **`AuthenticationEntryPoint` + `AccessDeniedHandler` у `SecurityConfig`**
 - `SecurityConfig` отримав `ObjectMapper` через `@RequiredArgsConstructor`
@@ -957,3 +935,35 @@ MuiTextField:     { defaultProps: { variant: 'outlined', size: 'small' } },
 
 **`.env.example` — виправлено імена змінних MinIO**
 - `S3_*` → `MINIO_*` щоб відповідати `application.yml` (`MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`)
+
+**Реалізація боргів 15.6 (всі сторінки sitemap)**
+- `/dashboard/notifications`: `Notification` entity/repo/service/controller (V13 migration, seed-нотифікації); `features/notifications/notificationApi.ts` + `useNotifications.ts`; `NotificationsPage` (список з chip-типами, кнопка "Читати всі", per-item mark-read); sidebar badge з лічильником непрочитаних (refetch кожну хвилину)
+- `/dashboard/payments`: `PaymentsPage` — форма реквізитів для виплат + saved payment methods (demo-режим, всі поля disabled)
+- `/admin/categories`: `UpsertCategoryRequestDto`; `CategoryService` CRUD (create/update/delete з перевіркою slug uniqueness); ендпоінти в `AdminController`; `CategoriesPage` (таблиця + dialog create/edit + confirm delete)
+- `/admin/finance`: `AdminFinanceSummaryDto`; нативні SQL-запити в `OrderItemRepository` (platform monthly revenue, top authors); `AdminService.getFinanceSummary()`; `AdminFinancePage` (stat cards + AreaChart + топ авторів)
+- `/admin/analytics`: `AdminPlatformAnalyticsDto`; merge monthly users (`UserRepository`) + revenue (`OrderItemRepository`) + top categories (`AssetRepository`); `AdminService.getPlatformAnalytics()`; `AdminAnalyticsPage` (KPI cards + dual-axis AreaChart + horizontal BarChart категорій)
+- `/500`: `ErrorPage` з кнопкою "Оновити сторінку" та "На головну"
+- `/maintenance`: `MaintenancePage` з іконкою та повідомленням
+- `/about`: `AboutPage` (stats, місія, команда)
+- `/faq`: `FaqPage` (7 Q&A через MUI Accordion)
+- `/licenses`: `LicensesPage` (порівняльна таблиця Standard vs Commercial)
+- `/contact`: `ContactPage` (форма з name/email/subject/message, demo submit)
+- `/blog`: `BlogPage` (6 static posts у card grid)
+- `DashboardLayout` — sidebar: додано Сповіщення/Платіжні реквізити (commonItems) та Фінанси/Аналітика/Категорії (adminItems); `useCommonItems` хук замість константи (для badge)
+- `NotFoundPage` — повноцінна сторінка з великим "404" і кнопками
+
+**Реалізація технічних боргів**
+- `Payout` entity + `PayoutStatus` enum + V14 міграція (`payout_status` PostgreSQL enum); `PayoutRepository`; `PayoutService` (getAuthorPayouts, getAllPayouts, triggerPayout, updateStatus); `PayoutDto`, `TriggerPayoutRequestDto`
+- `DashboardController`: GET `/dashboard/payouts` (`hasRole AUTHOR or ADMIN`) — автор бачить свої виплати
+- `AdminController`: GET `/admin/finance/payouts`, POST `/admin/finance/payouts`, PUT `/admin/finance/payouts/{id}/status`
+- Seed: 3 payouts для demo author (2 PAID квітень/березень, 1 PENDING травень)
+- `PaymentsPage`: для ROLE_AUTHOR показує `PayoutsHistory` компонент (summary cards + таблиця виплат) + форма реквізитів; для ROLE_USER — тільки форма
+- `AdminFinancePage`: отримав вкладки (Tabs) "Огляд" та "Виплати авторам"; вкладка payouts — таблиця з inline Select для зміни статусу + dialog для нової виплати
+- `features/analytics/payoutsApi.ts` + `usePayouts.ts` — авторський хук
+- `adminApi.ts` + `useAdmin.ts`: `fetchAdminPayouts`, `triggerPayout`, `updatePayoutStatus`, `useAdminPayouts`, `useTriggerPayout`, `useUpdatePayoutStatus`
+- Blog: `shared/data/blogPosts.ts` — масив з 6 постами (slug, tag, title, excerpt, date, readTime, content у markdown-like форматі); `BlogPostPage.tsx` (рендерить контент, знаходить пост за slug, fallback 404); `BlogPage` тепер імпортує з `blogPosts.ts`; роутер `/blog/:slug` → `BlogPostPage`
+
+**Критичні технічні рішення (finance/analytics native queries)**:
+- `OrderItemRepository.sumPlatformTotalRevenue()` / `sumPlatformMonthRevenue()` — JPQL та native для platform-wide агрегатів
+- `AdminService.getPlatformAnalytics()` мержить `userRepository.findMonthlyRegistrations()` (users по місяцях) і `orderItemRepository.findPlatformMonthlyRevenue()` через `LinkedHashMap<String, long[]>` де `long[2]` зберігає revenue × 100 (щоб не втрачати дробову частину при merge)
+- `AdminController` — `CategoryService` + `AdminService` ін'єктуються обидва (Lombok `@RequiredArgsConstructor`); category CRUD в тому самому контролері під `@PreAuthorize("hasRole('ROLE_ADMIN')")` на класі

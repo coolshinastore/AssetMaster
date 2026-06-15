@@ -1,4 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import Badge from '@mui/material/Badge'
 import Box from '@mui/material/Box'
 import Divider from '@mui/material/Divider'
 import List from '@mui/material/List'
@@ -8,16 +9,22 @@ import ListItemText from '@mui/material/ListItemText'
 import Typography from '@mui/material/Typography'
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutlined'
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined'
+import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined'
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined'
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined'
+import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined'
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined'
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined'
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined'
+import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined'
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined'
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined'
 import Navbar from '../Navbar/Navbar'
 import { useAuth } from '../../features/auth/AuthContext'
+import { useUnreadCount } from '../../features/notifications/useNotifications'
 
 const SIDEBAR_WIDTH = 240
 
@@ -26,14 +33,20 @@ interface NavItem {
   to: string
   icon: React.ReactNode
   end?: boolean
+  badge?: number
 }
 
-const commonItems: NavItem[] = [
-  { label: 'Профіль',       to: '/dashboard/profile',   icon: <PersonOutlinedIcon fontSize="small" /> },
-  { label: 'Мої покупки',   to: '/dashboard/purchases', icon: <ShoppingBagOutlinedIcon fontSize="small" /> },
-  { label: 'Список бажань', to: '/dashboard/wishlist',  icon: <FavoriteBorderIcon fontSize="small" /> },
-  { label: 'Безпека',       to: '/dashboard/security',  icon: <SecurityOutlinedIcon fontSize="small" /> },
-]
+function useCommonItems(): NavItem[] {
+  const { data: unread } = useUnreadCount()
+  return [
+    { label: 'Профіль',            to: '/dashboard/profile',        icon: <PersonOutlinedIcon fontSize="small" /> },
+    { label: 'Мої покупки',        to: '/dashboard/purchases',      icon: <ShoppingBagOutlinedIcon fontSize="small" /> },
+    { label: 'Список бажань',      to: '/dashboard/wishlist',       icon: <FavoriteBorderIcon fontSize="small" /> },
+    { label: 'Сповіщення',         to: '/dashboard/notifications',  icon: <NotificationsNoneOutlinedIcon fontSize="small" />, badge: unread?.count },
+    { label: 'Платіжні реквізити', to: '/dashboard/payments',       icon: <CreditCardOutlinedIcon fontSize="small" /> },
+    { label: 'Безпека',            to: '/dashboard/security',       icon: <SecurityOutlinedIcon fontSize="small" /> },
+  ]
+}
 
 const authorItems: NavItem[] = [
   { label: 'Мої активи',        to: '/dashboard/assets',     icon: <ImageOutlinedIcon fontSize="small" />,       end: true },
@@ -42,9 +55,12 @@ const authorItems: NavItem[] = [
 ]
 
 const adminItems: NavItem[] = [
-  { label: 'Дашборд',      to: '/admin',             icon: <AdminPanelSettingsOutlinedIcon fontSize="small" />, end: true },
-  { label: 'Модерація',    to: '/admin/moderation',  icon: <GavelOutlinedIcon fontSize="small" /> },
-  { label: 'Користувачі',  to: '/admin/users',       icon: <PeopleOutlinedIcon fontSize="small" /> },
+  { label: 'Дашборд',      to: '/admin',              icon: <AdminPanelSettingsOutlinedIcon fontSize="small" />, end: true },
+  { label: 'Модерація',    to: '/admin/moderation',   icon: <GavelOutlinedIcon fontSize="small" /> },
+  { label: 'Користувачі',  to: '/admin/users',        icon: <PeopleOutlinedIcon fontSize="small" /> },
+  { label: 'Фінанси',      to: '/admin/finance',      icon: <PaidOutlinedIcon fontSize="small" /> },
+  { label: 'Аналітика',    to: '/admin/analytics',    icon: <AnalyticsOutlinedIcon fontSize="small" /> },
+  { label: 'Категорії',    to: '/admin/categories',   icon: <CategoryOutlinedIcon fontSize="small" /> },
 ]
 
 function SidebarSection({ title, items }: { title?: string; items: NavItem[] }) {
@@ -77,7 +93,13 @@ function SidebarSection({ title, items }: { title?: string; items: NavItem[] }) 
               '&:not(.active):hover': { bgcolor: 'action.hover' },
             }}
           >
-            <ListItemIcon sx={{ minWidth: 32, color: 'text.secondary' }}>{item.icon}</ListItemIcon>
+            <ListItemIcon sx={{ minWidth: 32, color: 'text.secondary' }}>
+              {item.badge ? (
+                <Badge badgeContent={item.badge} color="primary" max={99}>
+                  {item.icon}
+                </Badge>
+              ) : item.icon}
+            </ListItemIcon>
             <ListItemText
               primary={item.label}
               slotProps={{ primary: { variant: 'body2', sx: { fontWeight: 500 } } }}
@@ -91,6 +113,7 @@ function SidebarSection({ title, items }: { title?: string; items: NavItem[] }) 
 
 export default function DashboardLayout() {
   const { user } = useAuth()
+  const commonItems = useCommonItems()
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

@@ -14,4 +14,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @EntityGraph(attributePaths = {"items", "items.asset", "items.asset.author", "items.asset.category"})
     Optional<Order> findByIdAndBuyerId(Long id, Long buyerId);
+
+    long countByStatus(com.assetmaster.api.entity.OrderStatus status);
 }

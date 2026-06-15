@@ -1,11 +1,20 @@
 package com.assetmaster.api.controller;
 
 import com.assetmaster.api.dto.AdminAssetDto;
+import com.assetmaster.api.dto.AdminFinanceSummaryDto;
+import com.assetmaster.api.dto.AdminPlatformAnalyticsDto;
 import com.assetmaster.api.dto.AdminStatsDto;
 import com.assetmaster.api.dto.AdminUserDto;
+import com.assetmaster.api.dto.CategoryDto;
 import com.assetmaster.api.dto.RejectAssetRequestDto;
 import com.assetmaster.api.dto.UpdateUserRoleRequestDto;
+import com.assetmaster.api.dto.UpsertCategoryRequestDto;
+import com.assetmaster.api.dto.PayoutDto;
+import com.assetmaster.api.dto.TriggerPayoutRequestDto;
+import com.assetmaster.api.entity.PayoutStatus;
 import com.assetmaster.api.service.AdminService;
+import com.assetmaster.api.service.CategoryService;
+import com.assetmaster.api.service.PayoutService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,6 +32,8 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final AdminService adminService;
+    private final CategoryService categoryService;
+    private final PayoutService payoutService;
 
     @GetMapping("/stats")
     @Operation(summary = "Статистика платформи")
@@ -74,5 +85,71 @@ public class AdminController {
             @PathVariable Long id,
             @RequestParam boolean verified) {
         return adminService.verifyUser(id, verified);
+    }
+
+    // ── Finance & Analytics ──────────────────────────────────────
+
+    @GetMapping("/finance")
+    @Operation(summary = "Фінансова аналітика платформи")
+    public AdminFinanceSummaryDto getFinanceSummary() {
+        return adminService.getFinanceSummary();
+    }
+
+    @GetMapping("/finance/payouts")
+    @Operation(summary = "Список всіх виплат авторам")
+    public org.springframework.data.domain.Page<PayoutDto> getPayouts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return payoutService.getAllPayouts(page, size);
+    }
+
+    @PostMapping("/finance/payouts")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Створити виплату автору")
+    public PayoutDto triggerPayout(@RequestBody @Valid TriggerPayoutRequestDto req) {
+        return payoutService.triggerPayout(req);
+    }
+
+    @PutMapping("/finance/payouts/{id}/status")
+    @Operation(summary = "Змінити статус виплати")
+    public PayoutDto updatePayoutStatus(
+            @PathVariable Long id,
+            @RequestParam PayoutStatus status) {
+        return payoutService.updateStatus(id, status);
+    }
+
+    @GetMapping("/analytics")
+    @Operation(summary = "Аналітика платформи")
+    public AdminPlatformAnalyticsDto getPlatformAnalytics() {
+        return adminService.getPlatformAnalytics();
+    }
+
+    // ── Categories CRUD ──────────────────────────────────────────
+
+    @GetMapping("/categories")
+    @Operation(summary = "Список усіх категорій (адмін)")
+    public java.util.List<CategoryDto> getCategories() {
+        return categoryService.getAllCategories();
+    }
+
+    @PostMapping("/categories")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Створити категорію")
+    public CategoryDto createCategory(@RequestBody @Valid UpsertCategoryRequestDto req) {
+        return categoryService.createCategory(req);
+    }
+
+    @PutMapping("/categories/{id}")
+    @Operation(summary = "Оновити категорію")
+    public CategoryDto updateCategory(@PathVariable Long id,
+                                      @RequestBody @Valid UpsertCategoryRequestDto req) {
+        return categoryService.updateCategory(id, req);
+    }
+
+    @DeleteMapping("/categories/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Видалити категорію")
+    public void deleteCategory(@PathVariable Long id) {
+        categoryService.deleteCategory(id);
     }
 }

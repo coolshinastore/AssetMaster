@@ -50,4 +50,44 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
             LIMIT 10
             """)
     List<Object[]> findTopAssetsByAuthorId(@Param("authorId") Long authorId);
+
+    @Query(nativeQuery = true, value = """
+            SELECT TO_CHAR(o.created_at, 'YYYY-MM') AS month,
+                   COUNT(DISTINCT o.id)              AS orders,
+                   COALESCE(SUM(oi.price_at_purchase), 0) AS revenue
+            FROM order_items oi
+            JOIN orders o ON oi.order_id = o.id
+            WHERE o.status = 'PAID'
+            GROUP BY TO_CHAR(o.created_at, 'YYYY-MM')
+            ORDER BY month DESC
+            LIMIT 12
+            """)
+    List<Object[]> findPlatformMonthlyRevenue();
+
+    @Query(nativeQuery = true, value = """
+            SELECT u.id, u.display_name,
+                   COUNT(oi.id)                     AS sales,
+                   COALESCE(SUM(oi.price_at_purchase), 0) AS earnings
+            FROM order_items oi
+            JOIN orders o ON oi.order_id = o.id
+            JOIN assets a ON oi.asset_id = a.id
+            JOIN users u  ON a.author_id = u.id
+            WHERE o.status = 'PAID'
+            GROUP BY u.id, u.display_name
+            ORDER BY earnings DESC
+            LIMIT 10
+            """)
+    List<Object[]> findTopAuthorsByEarnings();
+
+    @Query("SELECT COALESCE(SUM(oi.priceAtPurchase), 0) FROM OrderItem oi WHERE oi.order.status = 'PAID'")
+    BigDecimal sumPlatformTotalRevenue();
+
+    @Query(nativeQuery = true, value = """
+            SELECT COALESCE(SUM(oi.price_at_purchase), 0)
+            FROM order_items oi
+            JOIN orders o ON oi.order_id = o.id
+            WHERE o.status = 'PAID'
+              AND TO_CHAR(o.created_at, 'YYYY-MM') = TO_CHAR(NOW(), 'YYYY-MM')
+            """)
+    BigDecimal sumPlatformMonthRevenue();
 }

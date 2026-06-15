@@ -47,6 +47,42 @@ const router = createBrowserRouter([
     lazy: () => import('../pages/auth/EmailVerificationPage').then(m => ({ Component: m.default })),
   },
 
+  // ── Content pages ────────────────────────────────────────────
+  {
+    path: '/about',
+    lazy: () => import('../pages/AboutPage').then(m => ({ Component: m.default })),
+  },
+  {
+    path: '/faq',
+    lazy: () => import('../pages/FaqPage').then(m => ({ Component: m.default })),
+  },
+  {
+    path: '/licenses',
+    lazy: () => import('../pages/LicensesPage').then(m => ({ Component: m.default })),
+  },
+  {
+    path: '/contact',
+    lazy: () => import('../pages/ContactPage').then(m => ({ Component: m.default })),
+  },
+  {
+    path: '/blog',
+    lazy: () => import('../pages/BlogPage').then(m => ({ Component: m.default })),
+  },
+  {
+    path: '/blog/:slug',
+    lazy: () => import('../pages/BlogPostPage').then(m => ({ Component: m.default })),
+  },
+
+  // ── System pages ─────────────────────────────────────────────
+  {
+    path: '/500',
+    lazy: () => import('../pages/ErrorPage').then(m => ({ Component: m.default })),
+  },
+  {
+    path: '/maintenance',
+    lazy: () => import('../pages/MaintenancePage').then(m => ({ Component: m.default })),
+  },
+
   // ── Cart & Checkout ──────────────────────────────────────────
   {
     path: '/cart',
@@ -87,6 +123,14 @@ const router = createBrowserRouter([
         {
           path: '/dashboard/security',
           lazy: () => import('../pages/DashboardPage/SecurityPage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/dashboard/notifications',
+          lazy: () => import('../pages/DashboardPage/NotificationsPage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/dashboard/payments',
+          lazy: () => import('../pages/DashboardPage/PaymentsPage').then(m => ({ Component: m.default })),
         },
       ],
     }],
@@ -135,6 +179,18 @@ const router = createBrowserRouter([
         {
           path: '/admin/users',
           lazy: () => import('../pages/AdminPage/UsersPage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/admin/finance',
+          lazy: () => import('../pages/AdminPage/AdminFinancePage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/admin/analytics',
+          lazy: () => import('../pages/AdminPage/AdminAnalyticsPage').then(m => ({ Component: m.default })),
+        },
+        {
+          path: '/admin/categories',
+          lazy: () => import('../pages/AdminPage/CategoriesPage').then(m => ({ Component: m.default })),
         },
       ],
     }],

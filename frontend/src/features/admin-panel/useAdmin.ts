@@ -7,12 +7,26 @@ import {
   fetchAdminUsers,
   updateUserRole,
   verifyUser,
+  fetchAdminFinance,
+  fetchAdminPlatformAnalytics,
+  fetchAdminPayouts,
+  triggerPayout,
+  updatePayoutStatus,
+  fetchAdminCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  type UpsertCategoryRequest,
+  type TriggerPayoutRequest,
 } from './adminApi'
 
 const adminKeys = {
   stats: ['admin', 'stats'] as const,
   pending: (page: number) => ['admin', 'pending', page] as const,
   users: (page: number) => ['admin', 'users', page] as const,
+  finance: ['admin', 'finance'] as const,
+  platformAnalytics: ['admin', 'platform-analytics'] as const,
+  categories: ['admin', 'categories'] as const,
 }
 
 export function useAdminStats() {
@@ -62,5 +76,64 @@ export function useVerifyUser() {
   return useMutation({
     mutationFn: ({ id, verified }: { id: number; verified: boolean }) => verifyUser(id, verified),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin', 'users'] }),
+  })
+}
+
+export function useAdminFinance() {
+  return useQuery({ queryKey: adminKeys.finance, queryFn: fetchAdminFinance })
+}
+
+export function useAdminPayouts(page = 0) {
+  return useQuery({
+    queryKey: [...adminKeys.finance, 'payouts', page] as const,
+    queryFn: () => fetchAdminPayouts(page),
+  })
+}
+
+export function useTriggerPayout() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (req: TriggerPayoutRequest) => triggerPayout(req),
+    onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.finance }),
+  })
+}
+
+export function useUpdatePayoutStatus() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, status }: { id: number; status: string }) => updatePayoutStatus(id, status),
+    onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.finance }),
+  })
+}
+
+export function useAdminPlatformAnalytics() {
+  return useQuery({ queryKey: adminKeys.platformAnalytics, queryFn: fetchAdminPlatformAnalytics })
+}
+
+export function useAdminCategories() {
+  return useQuery({ queryKey: adminKeys.categories, queryFn: fetchAdminCategories })
+}
+
+export function useCreateCategory() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (req: UpsertCategoryRequest) => createCategory(req),
+    onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.categories }),
+  })
+}
+
+export function useUpdateCategory() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, req }: { id: number; req: UpsertCategoryRequest }) => updateCategory(id, req),
+    onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.categories }),
+  })
+}
+
+export function useDeleteCategory() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => deleteCategory(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: adminKeys.categories }),
   })
 }

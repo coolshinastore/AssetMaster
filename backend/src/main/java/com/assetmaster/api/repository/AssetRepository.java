@@ -33,4 +33,12 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
     long countByCategoryIdAndStatus(Long categoryId, AssetStatus status);
 
     long countByStatus(AssetStatus status);
+
+    @Query(nativeQuery = true, value = """
+            SELECT c.name, COUNT(a.id) AS asset_count
+            FROM assets a JOIN categories c ON a.category_id = c.id
+            WHERE a.status = 'PUBLISHED'
+            GROUP BY c.name ORDER BY asset_count DESC LIMIT 7
+            """)
+    java.util.List<Object[]> findTopCategoriesByAssetCount();
 }
