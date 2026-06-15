@@ -19,8 +19,6 @@ import StarIcon from '@mui/icons-material/Star'
 import StarBorderIcon from '@mui/icons-material/StarBorder'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
-import Navbar from '../../widgets/Navbar/Navbar'
-import Footer from '../../widgets/Footer/Footer'
 import { useAssetDetail } from '../../entities/asset/api/useAssets'
 import { useCart } from '../../features/cart/CartContext'
 import { useAuth } from '../../features/auth/AuthContext'
@@ -61,8 +59,7 @@ export default function AssetPage() {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
+    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
 
       <Box sx={{ flex: 1, maxWidth: 1440, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
         {isLoading && <AssetPageSkeleton />}
@@ -440,7 +437,6 @@ export default function AssetPage() {
         )}
       </Box>
 
-      <Footer />
     </Box>
   )
 }

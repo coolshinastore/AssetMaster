@@ -9,10 +9,8 @@ import Paper from '@mui/material/Paper'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined'
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutlined'
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
-import Navbar from '../widgets/Navbar/Navbar'
-
 const SUBJECTS = [
   'Технічна проблема',
   'Питання щодо ліцензії',
@@ -36,9 +34,7 @@ export default function ContactPage() {
   }
 
   return (
-    <>
-      <Navbar />
-      <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
+    <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Chip label="Підтримка" color="primary" size="small" sx={{ mb: 2 }} />
           <Typography variant="h2" sx={{ fontWeight: 800, mb: 2 }}>Зв'язатися з нами</Typography>
@@ -98,6 +94,5 @@ export default function ContactPage() {
           </Grid>
         </Grid>
       </Box>
-    </>
   )
 }

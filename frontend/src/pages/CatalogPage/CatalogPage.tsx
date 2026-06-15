@@ -11,8 +11,6 @@ import RadioGroup from '@mui/material/RadioGroup'
 import FormControlLabel from '@mui/material/FormControlLabel'
 import Radio from '@mui/material/Radio'
 import Divider from '@mui/material/Divider'
-import Navbar from '../../widgets/Navbar/Navbar'
-import Footer from '../../widgets/Footer/Footer'
 import AssetCard from '../../entities/asset/ui/AssetCard'
 import { useInfiniteAssets, useCategories } from '../../entities/asset/api/useAssets'
 import type { AssetFilters, CategoryDto } from '../../entities/asset/types'
@@ -53,8 +51,7 @@ export default function CatalogPage() {
   const totalElements = data?.pages[0]?.totalElements ?? 0
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
+    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
 
       <Box sx={{ flex: 1, maxWidth: 1440, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 5 }}>
         {/* Header */}
@@ -106,7 +103,6 @@ export default function CatalogPage() {
         </Box>
       </Box>
 
-      <Footer />
     </Box>
   )
 }

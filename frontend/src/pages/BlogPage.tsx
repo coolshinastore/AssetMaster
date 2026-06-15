@@ -5,14 +5,11 @@ import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import Grid from '@mui/material/Grid'
 import Typography from '@mui/material/Typography'
-import Navbar from '../widgets/Navbar/Navbar'
 import { BLOG_POSTS } from '../shared/data/blogPosts'
 
 export default function BlogPage() {
   return (
-    <>
-      <Navbar />
-      <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
+    <Box sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Chip label="Блог" color="primary" size="small" sx={{ mb: 2 }} />
           <Typography variant="h2" sx={{ fontWeight: 800 }}>AssetMaster Blog</Typography>
@@ -58,6 +55,5 @@ export default function BlogPage() {
           ))}
         </Grid>
       </Box>
-    </>
   )
 }

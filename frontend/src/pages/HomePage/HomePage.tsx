@@ -3,8 +3,6 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Chip from '@mui/material/Chip'
 import Button from '@mui/material/Button'
-import Navbar from '../../widgets/Navbar/Navbar'
-import Footer from '../../widgets/Footer/Footer'
 import AssetGrid from '../../widgets/AssetGrid/AssetGrid'
 import SearchBar from '../../features/search/SearchBar'
 import { useTrendingAssets, useNewAssets, useCategories } from '../../entities/asset/api/useAssets'
@@ -26,8 +24,7 @@ export default function HomePage() {
   const { data: categories } = useCategories()
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
+    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
 
       {/* ── Hero ──────────────────────────────────────────────── */}
       <Box
@@ -158,7 +155,6 @@ export default function HomePage() {
         )}
       </Box>
 
-      <Footer />
     </Box>
   )
 }

@@ -9,10 +9,8 @@ import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
 import Typography from '@mui/material/Typography'
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined'
 import DoNotDisturbAltOutlinedIcon from '@mui/icons-material/DoNotDisturbAltOutlined'
-import Navbar from '../widgets/Navbar/Navbar'
-
 const YES = <CheckCircleOutlineIcon fontSize="small" color="success" />
 const NO = <DoNotDisturbAltOutlinedIcon fontSize="small" color="error" />
 
@@ -29,9 +27,7 @@ const ROWS = [
 
 export default function LicensesPage() {
   return (
-    <>
-      <Navbar />
-      <Box sx={{ maxWidth: 860, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
+    <Box sx={{ maxWidth: 860, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Chip label="Ліцензування" color="primary" size="small" sx={{ mb: 2 }} />
           <Typography variant="h2" sx={{ fontWeight: 800, mb: 2 }}>Умови ліцензування</Typography>
@@ -93,6 +89,5 @@ export default function LicensesPage() {
           </Typography>
         </Box>
       </Box>
-    </>
   )
 }

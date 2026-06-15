@@ -8,8 +8,6 @@ import DownloadDoneOutlinedIcon from '@mui/icons-material/DownloadDoneOutlined'
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined'
 import StarOutlinedIcon from '@mui/icons-material/StarOutlined'
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined'
-import Navbar from '../widgets/Navbar/Navbar'
-
 const STATS = [
   { icon: <StorefrontOutlinedIcon sx={{ fontSize: 36, color: 'primary.main' }} />, value: '180K+', label: 'Активів у каталозі' },
   { icon: <GroupsOutlinedIcon sx={{ fontSize: 36, color: 'primary.main' }} />, value: '12K+', label: 'Авторів з усього світу' },
@@ -25,9 +23,7 @@ const TEAM = [
 
 export default function AboutPage() {
   return (
-    <>
-      <Navbar />
-      <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
+    <Box sx={{ maxWidth: 900, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
         <Box sx={{ textAlign: 'center', mb: 8 }}>
           <Chip label="Про нас" color="primary" size="small" sx={{ mb: 2 }} />
           <Typography variant="h2" sx={{ fontWeight: 800, mb: 2, fontSize: { xs: '2rem', md: '2.5rem' } }}>
@@ -75,6 +71,5 @@ export default function AboutPage() {
           ))}
         </Grid>
       </Box>
-    </>
   )
 }

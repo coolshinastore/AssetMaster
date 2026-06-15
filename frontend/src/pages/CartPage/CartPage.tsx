@@ -8,16 +8,13 @@ import Avatar from '@mui/material/Avatar'
 import Chip from '@mui/material/Chip'
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined'
 import ShoppingCartOutlinedIcon from '@mui/icons-material/ShoppingCartOutlined'
-import Navbar from '../../widgets/Navbar/Navbar'
-import Footer from '../../widgets/Footer/Footer'
 import { useCart } from '../../features/cart/CartContext'
 
 export default function CartPage() {
   const { items, total, removeItem, clearCart } = useCart()
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar />
+    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
 
       <Box sx={{ flex: 1, maxWidth: 1440, mx: 'auto', width: '100%', px: { xs: 2, md: 4 }, py: 6 }}>
         <Typography variant="h2" sx={{ mb: 4 }}>Кошик</Typography>
@@ -148,7 +145,6 @@ export default function CartPage() {
         )}
       </Box>
 
-      <Footer />
     </Box>
   )
 }

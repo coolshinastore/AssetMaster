@@ -5,7 +5,6 @@ import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
 import Typography from '@mui/material/Typography'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
-import Navbar from '../widgets/Navbar/Navbar'
 import { findPost } from '../shared/data/blogPosts'
 
 function renderContent(md: string) {
@@ -45,22 +44,17 @@ export default function BlogPostPage() {
 
   if (!post) {
     return (
-      <>
-        <Navbar />
-        <Box sx={{ maxWidth: 760, mx: 'auto', px: { xs: 2, md: 4 }, py: 12, textAlign: 'center' }}>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>Стаття не знайдена</Typography>
-          <Button component={Link} to="/blog" variant="contained" startIcon={<ArrowBackIcon />}>
-            Повернутись до блогу
-          </Button>
-        </Box>
-      </>
+      <Box sx={{ maxWidth: 760, mx: 'auto', px: { xs: 2, md: 4 }, py: 12, textAlign: 'center' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>Стаття не знайдена</Typography>
+        <Button component={Link} to="/blog" variant="contained" startIcon={<ArrowBackIcon />}>
+          Повернутись до блогу
+        </Button>
+      </Box>
     )
   }
 
   return (
-    <>
-      <Navbar />
-      <Box sx={{ maxWidth: 760, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
+    <Box sx={{ maxWidth: 760, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
         <Button
           component={Link}
           to="/blog"
@@ -96,6 +90,5 @@ export default function BlogPostPage() {
           </Button>
         </Box>
       </Box>
-    </>
   )
 }

@@ -6,8 +6,6 @@ import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
 import Typography from '@mui/material/Typography'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
-import Navbar from '../widgets/Navbar/Navbar'
-
 const FAQ = [
   {
     q: 'Як купити актив?',
@@ -43,9 +41,7 @@ export default function FaqPage() {
   const [expanded, setExpanded] = useState<number | false>(false)
 
   return (
-    <>
-      <Navbar />
-      <Box sx={{ maxWidth: 760, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
+    <Box sx={{ maxWidth: 760, mx: 'auto', px: { xs: 2, md: 4 }, py: 8 }}>
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Chip label="FAQ" color="primary" size="small" sx={{ mb: 2 }} />
           <Typography variant="h2" sx={{ fontWeight: 800 }}>Часті запитання</Typography>
@@ -76,6 +72,5 @@ export default function FaqPage() {
           </Accordion>
         ))}
       </Box>
-    </>
   )
 }

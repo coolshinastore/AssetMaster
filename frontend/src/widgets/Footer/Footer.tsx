@@ -79,20 +79,6 @@ export default function Footer() {
           <Typography variant="body2" color="text.secondary">
             © {new Date().getFullYear()} AssetMaster. Всі права захищено.
           </Typography>
-          <Box sx={{ display: 'flex', gap: 3 }}>
-            {[['Умови використання', '/licenses'], ['Конфіденційність', '/contact']].map(([label, href]) => (
-              <Typography
-                key={href}
-                component={Link}
-                to={href}
-                variant="body2"
-                color="text.secondary"
-                sx={{ textDecoration: 'none', '&:hover': { color: 'primary.main' } }}
-              >
-                {label}
-              </Typography>
-            ))}
-          </Box>
         </Box>
       </Box>
     </Box>
