@@ -34,6 +34,12 @@ export default function AssetPage() {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [reviewPage, setReviewPage] = useState(0)
+
+  const displayPrice = asset
+    ? license === 'COMMERCIAL'
+      ? Number((asset.price * 2).toFixed(2))
+      : Number(asset.price)
+    : 0
   const [reviewRating, setReviewRating] = useState(0)
   const [reviewComment, setReviewComment] = useState('')
   const [reviewError, setReviewError] = useState<string | null>(null)
@@ -48,7 +54,7 @@ export default function AssetPage() {
       title: asset.title,
       thumbnailUrl: asset.previewUrls?.[0] ?? null,
       authorName: asset.authorName ?? '',
-      price: asset.price,
+      price: displayPrice,
       licenseType: license,
     })
   }
@@ -364,7 +370,7 @@ export default function AssetPage() {
                   mb: 3,
                 }}
               >
-                ${asset.price}
+                ${displayPrice}
               </Typography>
 
               {/* License toggle */}
