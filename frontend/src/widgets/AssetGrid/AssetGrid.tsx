@@ -16,14 +16,16 @@ interface Props {
 export default function AssetGrid({ label, assets, isLoading, viewAllHref, skeletonCount = 8 }: Props) {
   return (
     <Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h2">{label}</Typography>
-        {viewAllHref && (
-          <Button component={Link} to={viewAllHref} size="small">
-            Дивитись всі →
-          </Button>
-        )}
-      </Box>
+      {label && (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Typography variant="h2">{label}</Typography>
+          {viewAllHref && (
+            <Button component={Link} to={viewAllHref} size="small">
+              Дивитись всі →
+            </Button>
+          )}
+        </Box>
+      )}
 
       <Box
         sx={{
