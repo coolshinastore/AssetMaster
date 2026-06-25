@@ -6,8 +6,6 @@ services:
       POSTGRES_DB: ${DB_NAME:-assetmaster}
       POSTGRES_USER: ${DB_USERNAME:-assetmaster}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-assetmaster}
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,40 +19,41 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-assetmaster}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-assetmaster_secret}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-assetmaster}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-assetmaster_secret}
     volumes:
       - minio_data:/data
 
-  # Uncomment after Phase 1 (backend Docker image is built)
-  # backend:
-  #   build: ./backend
-  #   restart: unless-stopped
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   environment:
-  #     DB_HOST: db
-  #     DB_NAME: ${DB_NAME:-assetmaster}
-  #     DB_USERNAME: ${DB_USERNAME:-assetmaster}
-  #     DB_PASSWORD: ${DB_PASSWORD:-assetmaster}
-  #     JWT_SECRET: ${JWT_SECRET}
-  #     S3_ENDPOINT: http://minio:9000
-  #     S3_BUCKET: ${S3_BUCKET:-assetmaster}
-  #     S3_ACCESS_KEY: ${S3_ACCESS_KEY:-assetmaster}
-  #     S3_SECRET_KEY: ${S3_SECRET_KEY:-assetmaster_secret}
-  #   ports:
-  #     - "8080:8080"
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-assetmaster}
+      DB_USERNAME: ${DB_USERNAME:-assetmaster}
+      DB_PASSWORD: ${DB_PASSWORD:-assetmaster}
+      JWT_SECRET: ${JWT_SECRET}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-}
+      MINIO_BUCKET: ${MINIO_BUCKET:-assetmaster}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost}
+      CORS_ALLOWED_ORIGINS: ${APP_BASE_URL:-http://localhost}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
 
-  # Uncomment after Phase 2 (frontend Docker image is built)
-  # frontend:
-  #   build: ./frontend
-  #   restart: unless-stopped
-  #   ports:
-  #     - "5173:80"
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
